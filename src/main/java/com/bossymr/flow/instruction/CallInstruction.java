@@ -30,11 +30,10 @@ public final class CallInstruction implements Instruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         if (this.method.getReturnType() instanceof EmptyType) {
             // This method is as far as we are considered 'pure'. We don't keep track of modifications to external
             // fields, so unless the memory returns a variable, it can't modify the program's state.
-            FlowSnapshot snapshot = predecessor.successorState(this);
             FlowSnapshot successor = snapshot.successorState(method);
             return List.of(successor);
         }
@@ -46,21 +45,20 @@ public final class CallInstruction implements Instruction {
             // The copy won't be seen by calling: exitPoint.getSuccessors()
             FlowSnapshot copy = exitPoint.disconnectedState();
             // Add all constraints at the call site to the memory state.
-            copy.getConstraints().addAll(predecessor.getConstraints());
+            copy.getConstraints().addAll(snapshot.getConstraints());
             List<ValueType> arguments = this.method.getArguments();
             // For all arguments, pop the argument from the stack (in reverse order since the first argument is
             // popped last). Set the passed value to be equal to the argument in the method.
             Map<Expression, Expression> table = new HashMap<>();
             for (int i = 1; i < arguments.size() + 1; i++) {
                 Expression expression = target.getParameter(arguments.size() - i);
-                Expression value = predecessor.getStack().get(predecessor.getStack().size() - i);
+                Expression value = snapshot.getStack().get(snapshot.getStack().size() - i);
                 table.put(expression, value);
                 copy.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, expression, value));
             }
             // All constraints from the call site have been added to the disconnected state, as such, we can check
             // if it is possible for this memory state to be returned given the arguments we pass to the method.
             if (copy.isReachable()) {
-                FlowSnapshot snapshot = predecessor.successorState(this);
                 // We need to replace the argument placeholder with the actual argument value.
                 Expression returnValue = copy.pop().translate(child -> {
                     if (table.containsKey(child)) {

@@ -3,18 +3,18 @@ package com.bossymr.flow;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.LiteralExpression;
+import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.instruction.Label;
 import com.bossymr.flow.state.FlowEngine;
 import com.bossymr.flow.state.FlowMethod;
 import com.bossymr.flow.state.FlowSnapshot;
-import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.type.ValueType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-class ReturnValueTest {
+class DataFlowTest {
 
     @Test
     void returnConstant() {

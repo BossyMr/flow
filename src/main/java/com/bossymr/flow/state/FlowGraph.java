@@ -10,16 +10,14 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class FlowGraph {
 
     private FlowGraph() {}
 
-    public static String getText(List<FlowMethod> methods) {
+    public static String getText(FlowEngine engine) {
+        Set<FlowMethod> methods = engine.getMethods();
         StringBuilder builder = new StringBuilder();
         List<FlowSnapshot> snapshots = new ArrayList<>();
         builder.append("digraph {\n");
@@ -31,14 +29,14 @@ public class FlowGraph {
         return builder.toString();
     }
 
-    public static void getGraph(File outputFile, List<FlowMethod> methods) throws IOException, InterruptedException {
+    public static void getGraph(File outputFile, FlowEngine engine) throws IOException, InterruptedException {
         if (outputFile.getParentFile() != null) {
             Files.createDirectories(outputFile.getParentFile().toPath());
         }
         if (!outputFile.exists()) {
             Files.createFile(outputFile.toPath());
         }
-        String text = getText(methods);
+        String text = getText(engine);
         Path instructionFile = Files.createTempFile("dataFlow", ".dot");
         Files.writeString(instructionFile, text);
         Process process = new ProcessBuilder("dot", "-Tsvg")

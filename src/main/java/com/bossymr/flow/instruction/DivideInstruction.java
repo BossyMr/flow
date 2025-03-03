@@ -13,9 +13,9 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class DivideInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        Expression right = predecessor.pop();
-        Expression left = predecessor.pop();
+    public Expression getExpression(FlowSnapshot snapshot) {
+        Expression right = snapshot.pop();
+        Expression left = snapshot.pop();
         return new BinaryExpression(BinaryExpression.Operator.DIVIDE, left, right);
     }
 

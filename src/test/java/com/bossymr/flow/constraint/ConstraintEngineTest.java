@@ -19,7 +19,7 @@ class ConstraintEngineTest {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
         snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(1)));
-        Reachable reachable = engine.getConstraintEngine().isReachable(snapshot);
+        Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.NOT_REACHABLE, reachable);
     }
 
@@ -29,17 +29,17 @@ class ConstraintEngineTest {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
         snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(0)));
-        Reachable reachable = engine.getConstraintEngine().isReachable(snapshot);
+        Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
     }
 
-    @DisplayName("Assert 0 (int) == 0 (real) as int")
+    @DisplayName("Assert 0 == {real to int} 0")
     @Test
     void zeroIntEqualToZeroRealReachable() {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
         snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), new UnaryExpression(UnaryExpression.Operator.REAL_TO_INTEGER, LiteralExpression.numericLiteral(0))));
-        Reachable reachable = engine.getConstraintEngine().isReachable(snapshot);
+        Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
     }
 }

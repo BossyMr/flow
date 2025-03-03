@@ -11,8 +11,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class RealToIntegerInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new UnaryExpression(UnaryExpression.Operator.REAL_TO_INTEGER, predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new UnaryExpression(UnaryExpression.Operator.REAL_TO_INTEGER, snapshot.pop());
     }
 
     @Override

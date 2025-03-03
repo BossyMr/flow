@@ -14,8 +14,7 @@ import java.util.List;
  */
 public final class ReturnInstruction implements Instruction {
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
-        FlowSnapshot snapshot = predecessor.successorState(this);
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         method.getExitPoints().add(snapshot);
         return List.of();
     }

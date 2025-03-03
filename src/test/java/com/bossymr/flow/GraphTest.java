@@ -5,21 +5,22 @@ import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.LiteralExpression;
 import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.instruction.Label;
-import com.bossymr.flow.state.*;
+import com.bossymr.flow.state.FlowEngine;
+import com.bossymr.flow.state.FlowGraph;
+import com.bossymr.flow.state.FlowMethod;
+import com.bossymr.flow.state.FlowSnapshot;
 import com.bossymr.flow.type.ValueType;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 class GraphTest {
 
     @Test
-    void functionCall() throws IOException, InterruptedException {
+    void functionCall() {
         Method abs = new Method("abs", ValueType.integerType(), List.of(ValueType.integerType()), codeBuilder -> codeBuilder
                 .duplicate()
                 .pushInteger(0)
@@ -40,11 +41,8 @@ class GraphTest {
                 .insertLabel(label)
                 .returnValue());
         FlowEngine engine = new FlowEngine();
-        FlowMethod absMethod = engine.getMethod(abs);
         FlowMethod fooMethod = engine.getMethod(foo);
-        Path graph = Path.of(System.getProperty("java.io.tmpdir"), "graph.svg");
-        FlowGraph.getGraph(graph.toFile(), List.of(absMethod, fooMethod));
-        System.out.println(graph.toAbsolutePath());
+        System.out.println(FlowGraph.getText(engine));
         List<FlowSnapshot> snapshots = fooMethod.afterElement(label);
         Assertions.assertEquals(1, snapshots.size());
         FlowSnapshot snapshot = snapshots.getFirst();

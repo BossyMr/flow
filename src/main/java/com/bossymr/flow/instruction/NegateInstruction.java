@@ -13,8 +13,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class NegateInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new UnaryExpression(UnaryExpression.Operator.NEGATE, predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new UnaryExpression(UnaryExpression.Operator.NEGATE, snapshot.pop());
     }
 
     @Override

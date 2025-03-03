@@ -1,6 +1,7 @@
 package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.constraint.Constraint;
+import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.expression.UnaryExpression;
 import com.bossymr.flow.state.FlowEngine;
@@ -24,20 +25,19 @@ public final class ConditionalJumpInstruction implements Instruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
-        FlowSnapshot snapshot = predecessor.successorState(this);
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         Expression condition = snapshot.pop();
-        Constraint constraint = engine.getConstraintEngine().getConstraint(snapshot, condition);
+        Constraint constraint = ConstraintEngine.getConstraint(snapshot, condition);
         List<FlowSnapshot> successors = new ArrayList<>();
         if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_TRUE) {
-            FlowSnapshot successor = snapshot.successorState(instruction);
+            FlowSnapshot successor = snapshot.successorState();
             successor.require(condition);
-            successors.add(successor);
+            successors.add(successor.successorState(method));
         }
         if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_FALSE) {
-            FlowSnapshot successor = snapshot.successorState(method);
+            FlowSnapshot successor = snapshot.successorState();
             successor.require(new UnaryExpression(UnaryExpression.Operator.NOT, condition));
-            successors.add(successor);
+            successors.add(successor.successorState(method));
         }
         return List.copyOf(successors);
     }

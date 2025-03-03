@@ -15,8 +15,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class AddInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new BinaryExpression(BinaryExpression.Operator.ADD, predecessor.pop(), predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new BinaryExpression(BinaryExpression.Operator.ADD, snapshot.pop(), snapshot.pop());
     }
 
     @Override

@@ -21,11 +21,10 @@ public final class AssignInstruction implements Instruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
-        FlowSnapshot snapshot = predecessor.successorState(this);
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         Expression value = snapshot.pop();
-        predecessor.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, variable, value));
-        FlowSnapshot successor = predecessor.successorState(method);
+        snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, variable, value));
+        FlowSnapshot successor = snapshot.successorState(method);
         return List.of(successor);
     }
 

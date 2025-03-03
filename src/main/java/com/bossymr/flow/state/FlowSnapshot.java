@@ -1,5 +1,6 @@
 package com.bossymr.flow.state;
 
+import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.Expression;
@@ -180,7 +181,7 @@ public class FlowSnapshot {
      * @return if this snapshot is reachable.
      */
     public boolean isReachable() {
-        return switch (engine.getConstraintEngine().isReachable(this)) {
+        return switch (ConstraintEngine.isReachable(this)) {
             case REACHABLE, UNKNOWN -> true;
             case NOT_REACHABLE -> false;
         };
@@ -193,7 +194,7 @@ public class FlowSnapshot {
      * @return the result of the provided expression.
      */
     public Constraint compute(Expression expression) {
-        return engine.getConstraintEngine().getConstraint(this, expression);
+        return ConstraintEngine.getConstraint(this, expression);
     }
 
     /**

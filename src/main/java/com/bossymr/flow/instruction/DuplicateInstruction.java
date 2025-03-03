@@ -14,8 +14,7 @@ import java.util.List;
 public final class DuplicateInstruction implements Instruction {
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
-        FlowSnapshot snapshot = predecessor.successorState(this);
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         snapshot.push(snapshot.getStack().getLast());
         FlowSnapshot successor = snapshot.successorState(method);
         return List.of(successor);

@@ -11,8 +11,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class EqualToInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, predecessor.pop(), predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, snapshot.pop(), snapshot.pop());
     }
 
     @Override

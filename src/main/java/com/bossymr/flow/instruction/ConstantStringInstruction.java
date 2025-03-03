@@ -22,17 +22,8 @@ public final class ConstantStringInstruction implements LinearInstruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
-        FlowSnapshot snapshot = predecessor.successorState(this);
-        snapshot.push(LiteralExpression.stringLiteral(value));
-        FlowSnapshot successor = snapshot.successorState(method);
-        return List.of(successor);
-
-    }
-
-    @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return null;
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return LiteralExpression.stringLiteral(value);
     }
 
     public String getValue() {

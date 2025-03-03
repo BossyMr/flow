@@ -18,10 +18,9 @@ public final class JumpInstruction implements Instruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot predecessor) {
+    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         // This might seem wasteful, but we currently create a new snapshot for each instruction. In order to be
         // able to find a snapshot for each instruction, in the future, this should be reworked.
-        FlowSnapshot snapshot = predecessor.successorState(this);
         FlowSnapshot successor = snapshot.successorState(instruction);
         return List.of(successor);
     }

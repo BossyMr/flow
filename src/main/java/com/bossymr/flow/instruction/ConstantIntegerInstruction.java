@@ -18,7 +18,7 @@ public final class ConstantIntegerInstruction implements LinearInstruction {
     }
 
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
+    public Expression getExpression(FlowSnapshot snapshot) {
         return LiteralExpression.integerLiteral(value);
     }
 

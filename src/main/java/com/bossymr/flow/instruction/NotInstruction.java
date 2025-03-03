@@ -11,8 +11,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class NotInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new UnaryExpression(UnaryExpression.Operator.NOT, predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new UnaryExpression(UnaryExpression.Operator.NOT, snapshot.pop());
     }
 
     @Override

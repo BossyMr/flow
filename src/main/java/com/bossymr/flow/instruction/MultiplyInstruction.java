@@ -13,8 +13,8 @@ import com.bossymr.flow.state.FlowSnapshot;
  */
 public final class MultiplyInstruction implements LinearInstruction {
     @Override
-    public Expression getExpression(FlowSnapshot predecessor) {
-        return new BinaryExpression(BinaryExpression.Operator.MULTIPLY, predecessor.pop(), predecessor.pop());
+    public Expression getExpression(FlowSnapshot snapshot) {
+        return new BinaryExpression(BinaryExpression.Operator.MULTIPLY, snapshot.pop(), snapshot.pop());
     }
 
     @Override
