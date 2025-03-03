@@ -5,6 +5,8 @@ import com.bossymr.flow.expression.Expression;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,13 +35,19 @@ public class FlowGraph {
         if (outputFile.getParentFile() != null) {
             Files.createDirectories(outputFile.getParentFile().toPath());
         }
+        if (!outputFile.exists()) {
+            Files.createFile(outputFile.toPath());
+        }
         String text = getText(methods);
         Path instructionFile = Files.createTempFile("dataFlow", ".dot");
         Files.writeString(instructionFile, text);
-        Process process = new ProcessBuilder("dot", "-Tsvg", "\"" + instructionFile.toAbsolutePath() + "\"")
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
+        Process process = new ProcessBuilder("dot", "-Tsvg")
                 .redirectOutput(outputFile)
                 .start();
+        OutputStream inputStream = process.getOutputStream();
+        OutputStreamWriter writer = new OutputStreamWriter(inputStream);
+        writer.write(text);
+        writer.close();
         int exitCode = process.waitFor();
         if (exitCode != 0) {
             String message = new String(process.getErrorStream().readAllBytes(), Charset.defaultCharset());

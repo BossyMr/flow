@@ -8,9 +8,12 @@ import com.bossymr.flow.instruction.Label;
 import com.bossymr.flow.state.*;
 import com.bossymr.flow.type.ValueType;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 class GraphTest {
@@ -37,8 +40,12 @@ class GraphTest {
                 .insertLabel(label)
                 .returnValue());
         FlowEngine engine = new FlowEngine();
-        FlowMethod method = engine.getMethod(foo);
-        List<FlowSnapshot> snapshots = method.afterElement(label);
+        FlowMethod absMethod = engine.getMethod(abs);
+        FlowMethod fooMethod = engine.getMethod(foo);
+        Path graph = Path.of(System.getProperty("java.io.tmpdir"), "graph.svg");
+        FlowGraph.getGraph(graph.toFile(), List.of(absMethod, fooMethod));
+        System.out.println(graph.toAbsolutePath());
+        List<FlowSnapshot> snapshots = fooMethod.afterElement(label);
         Assertions.assertEquals(1, snapshots.size());
         FlowSnapshot snapshot = snapshots.getFirst();
         Constraint constraint = snapshot.compute(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, result, LiteralExpression.booleanLiteral(true)));
