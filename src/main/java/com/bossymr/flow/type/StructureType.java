@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 /**
  * A {@code StructureType} represents a structure with fields.
  */
-public class StructureType implements ValueType {
+public final class StructureType implements ValueType {
 
     private final String name;
     private final List<Field> fields;

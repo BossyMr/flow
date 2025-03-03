@@ -1,6 +1,7 @@
 package com.bossymr.flow;
 
-import com.bossymr.flow.state.Variable;
+import com.bossymr.flow.expression.Variable;
+import com.bossymr.flow.instruction.*;
 import com.bossymr.flow.type.EmptyType;
 import com.bossymr.flow.type.ValueType;
 
@@ -19,29 +20,29 @@ public class CodeBuilder {
         this.stack = stack;
     }
 
-    public Instruction.Label newlabel() {
-        return new Instruction.Label();
+    public Label newlabel() {
+        return new Label();
     }
 
-    public Instruction.Label startLabel() {
-        Instruction.Label label = newlabel();
+    public Label startLabel() {
+        Label label = newlabel();
         insertLabel(label);
         return label;
     }
 
-    public CodeBuilder insertLabel(Instruction.Label label) {
+    public CodeBuilder insertLabel(Label label) {
         instructions.add(label);
         return this;
     }
 
-    public CodeBuilder conditionalJump(Instruction.Label thenLabel) {
+    public CodeBuilder conditionalJump(Label thenLabel) {
         validateStack(1, List.of(new InstructionKind(ValueType.emptyType(), ValueType.booleanType())));
-        instructions.add(new Instruction.ConditionalJumpInstruction(thenLabel));
+        instructions.add(new ConditionalJumpInstruction(thenLabel));
         return this;
     }
 
-    public CodeBuilder jump(Instruction.Label label) {
-        instructions.add(new Instruction.JumpInstruction(label));
+    public CodeBuilder jump(Label label) {
+        instructions.add(new JumpInstruction(label));
         return this;
     }
 
@@ -50,7 +51,7 @@ public class CodeBuilder {
         if (!(method.getReturnType() instanceof EmptyType)) {
             stack.add(method.getReturnType());
         }
-        instructions.add(new Instruction.CallInstruction(method));
+        instructions.add(new CallInstruction(method));
         return this;
     }
 
@@ -58,7 +59,7 @@ public class CodeBuilder {
         // 1) if not condition -> 3
         // 2) thenHandler
         // 3) elseLabel
-        Instruction.Label elseLabel = newlabel();
+        Label elseLabel = newlabel();
         not();
         conditionalJump(elseLabel);
         CodeBuilder thenCodeBuilder = new CodeBuilder(method, new ArrayList<>(stack));
@@ -77,8 +78,8 @@ public class CodeBuilder {
         // 3) jump -> 5
         // 4) (thenLabel) thenHandler
         // 5) joinLabel
-        Instruction.Label thenLabel = newlabel();
-        Instruction.Label joinLabel = newlabel();
+        Label thenLabel = newlabel();
+        Label joinLabel = newlabel();
         conditionalJump(thenLabel);
         CodeBuilder elseCodeBuilder = new CodeBuilder(method, new ArrayList<>(stack));
         elseHandler.accept(elseCodeBuilder);
@@ -102,39 +103,39 @@ public class CodeBuilder {
             throw new IllegalArgumentException();
         }
         stack.add(stack.getLast());
-        instructions.add(new Instruction.DuplicateInstruction());
+        instructions.add(new DuplicateInstruction());
         return this;
     }
 
     public CodeBuilder pushByte(byte value) {
         stack.add(ValueType.integerType());
-        instructions.add(new Instruction.ConstantByteInstruction(value));
+        instructions.add(new ConstantByteInstruction(value));
         return this;
     }
 
     public CodeBuilder pushInteger(int value) {
         stack.add(ValueType.integerType());
-        instructions.add(new Instruction.ConstantIntegerInstruction(value));
+        instructions.add(new ConstantIntegerInstruction(value));
         return this;
     }
 
 
     public CodeBuilder pushLong(long value) {
         stack.add(ValueType.integerType());
-        instructions.add(new Instruction.ConstantLongInstruction(value));
+        instructions.add(new ConstantLongInstruction(value));
         return this;
     }
 
     public CodeBuilder pushString(String value) {
         stack.add(ValueType.stringType());
-        instructions.add(new Instruction.ConstantStringInstruction(value));
+        instructions.add(new ConstantStringInstruction(value));
         return this;
     }
 
 
     public CodeBuilder pushBoolean(boolean value) {
         stack.add(ValueType.booleanType());
-        instructions.add(new Instruction.ConstantBooleanInstruction(value));
+        instructions.add(new ConstantBooleanInstruction(value));
         return this;
     }
 
@@ -145,7 +146,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.stringType(), ValueType.stringType(), ValueType.stringType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.AddInstruction());
+        instructions.add(new AddInstruction());
         return this;
     }
 
@@ -155,7 +156,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.SubtractInstruction());
+        instructions.add(new SubtractInstruction());
         return this;
     }
 
@@ -165,7 +166,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.MultiplyInstruction());
+        instructions.add(new MultiplyInstruction());
         return this;
     }
 
@@ -175,7 +176,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.DivideInstruction());
+        instructions.add(new DivideInstruction());
         return this;
     }
 
@@ -184,7 +185,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.ModuloInstruction());
+        instructions.add(new ModuloInstruction());
         return this;
     }
 
@@ -193,7 +194,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.integerType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.RealToIntegerInstruction());
+        instructions.add(new RealToIntegerInstruction());
         return this;
     }
 
@@ -202,14 +203,14 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.numericType(), ValueType.integerType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.IntegerToRealInstruction());
+        instructions.add(new IntegerToRealInstruction());
         return this;
     }
 
     public CodeBuilder equalTo() {
         validateStackLength(2);
         stack.add(ValueType.booleanType());
-        instructions.add(new Instruction.EqualToInstruction());
+        instructions.add(new EqualToInstruction());
         return this;
     }
 
@@ -219,7 +220,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.GreaterThanInstruction());
+        instructions.add(new GreaterThanInstruction());
         return this;
     }
 
@@ -229,7 +230,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.LessThanInstruction());
+        instructions.add(new LessThanInstruction());
         return this;
     }
 
@@ -238,7 +239,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.AndInstruction());
+        instructions.add(new AndInstruction());
         return this;
     }
 
@@ -247,7 +248,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.XorInstruction());
+        instructions.add(new XorInstruction());
         return this;
     }
 
@@ -256,7 +257,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.OrInstruction());
+        instructions.add(new OrInstruction());
         return this;
     }
 
@@ -265,7 +266,7 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.booleanType(), ValueType.booleanType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.NotInstruction());
+        instructions.add(new NotInstruction());
         return this;
     }
 
@@ -275,13 +276,13 @@ public class CodeBuilder {
                 new InstructionKind(ValueType.numericType(), ValueType.numericType())
         ));
         stack.add(type.output());
-        instructions.add(new Instruction.NegateInstruction());
+        instructions.add(new NegateInstruction());
         return this;
     }
 
     public CodeBuilder assign(Variable variable) {
         validateStack(1, List.of(new InstructionKind(null, variable.getType())));
-        instructions.add(new Instruction.AssignInstruction(variable));
+        instructions.add(new AssignInstruction(variable));
         return this;
     }
 
@@ -290,7 +291,7 @@ public class CodeBuilder {
             validateStackLength(1);
             stack.removeLast();
         }
-        instructions.add(new Instruction.ReturnInstruction());
+        instructions.add(new ReturnInstruction());
     }
 
     private void validateStackLength(int length) {

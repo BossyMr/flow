@@ -7,7 +7,7 @@ import java.util.function.Function;
 /**
  * A {@code UnaryExpression} represents a unary expression.
  */
-public class UnaryExpression implements Expression {
+public final class UnaryExpression implements Expression {
 
     private final Operator operator;
     private final ValueType type;

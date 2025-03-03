@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * An {@code IntegerType} represents an integer value.
  */
-public class IntegerType implements NumericType {
+public final class IntegerType implements NumericType {
 
     @Override
     public boolean isStructure() {

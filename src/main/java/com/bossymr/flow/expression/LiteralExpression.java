@@ -8,7 +8,7 @@ import java.util.function.Function;
 /**
  * A {@code LiteralExpression} represents a literal value.
  */
-public class LiteralExpression implements Expression {
+public final class LiteralExpression implements Expression {
 
     private final ValueType type;
     private final Object value;

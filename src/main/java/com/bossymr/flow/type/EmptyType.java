@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * An {@code EmptyType} represents a {@code void} type.
  */
-public class EmptyType implements ValueType {
+public final class EmptyType implements ValueType {
 
     @Override
     public boolean isStructure() {

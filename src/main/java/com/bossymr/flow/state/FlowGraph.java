@@ -1,22 +1,17 @@
 package com.bossymr.flow.state;
 
-import com.bossymr.flow.Instruction;
+import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.expression.Expression;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class FlowGraph {
 

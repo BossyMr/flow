@@ -10,7 +10,7 @@ import java.util.function.Function;
 /**
  * A {@code BinaryExpression} represents a binary expression.
  */
-public class BinaryExpression implements Expression {
+public final class BinaryExpression implements Expression {
 
     private final Operator operator;
     private final ValueType type;

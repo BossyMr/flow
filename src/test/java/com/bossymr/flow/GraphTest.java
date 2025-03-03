@@ -3,14 +3,14 @@ package com.bossymr.flow;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.LiteralExpression;
+import com.bossymr.flow.expression.Variable;
+import com.bossymr.flow.instruction.Label;
 import com.bossymr.flow.state.*;
 import com.bossymr.flow.type.ValueType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 
 class GraphTest {
@@ -27,7 +27,7 @@ class GraphTest {
                                 .negate()
                                 .returnValue()));
         Variable result = new Variable("result", ValueType.booleanType());
-        Instruction.Label label = new Instruction.Label();
+        Label label = new Label();
         Method foo = new Method("foo", ValueType.emptyType(), List.of(), codeBuilder -> codeBuilder
                 .pushInteger(-1)
                 .call(abs)

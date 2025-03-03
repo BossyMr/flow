@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * A {@code RealType} perfectly represents any numeric value.
  */
-public class RealType implements NumericType {
+public final class RealType implements NumericType {
 
     @Override
     public boolean isStructure() {

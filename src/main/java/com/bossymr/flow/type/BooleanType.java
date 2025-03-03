@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * A {@code BooleanType} represents a boolean type.
  */
-public class BooleanType implements ValueType {
+public final class BooleanType implements ValueType {
 
     @Override
     public boolean isStructure() {

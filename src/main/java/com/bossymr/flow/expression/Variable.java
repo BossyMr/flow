@@ -1,6 +1,5 @@
-package com.bossymr.flow.state;
+package com.bossymr.flow.expression;
 
-import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.function.Function;

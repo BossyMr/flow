@@ -7,7 +7,7 @@ import java.util.function.Function;
 /**
  * An {@code Expression} represents an expression.
  */
-public interface Expression {
+public sealed interface Expression permits BinaryExpression, LiteralExpression, UnaryExpression, Variable {
 
     /**
      * Returns the return type of this expression.

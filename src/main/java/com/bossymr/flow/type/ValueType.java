@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * A {@code ValueType} represents the type of an expression or value.
  */
-public interface ValueType {
+public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, NumericType, StringType, StructureType {
 
     /**
      * Returns an empty type.

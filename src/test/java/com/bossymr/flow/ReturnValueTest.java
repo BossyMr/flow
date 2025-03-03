@@ -3,10 +3,11 @@ package com.bossymr.flow;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.LiteralExpression;
+import com.bossymr.flow.instruction.Label;
 import com.bossymr.flow.state.FlowEngine;
 import com.bossymr.flow.state.FlowMethod;
 import com.bossymr.flow.state.FlowSnapshot;
-import com.bossymr.flow.state.Variable;
+import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.type.ValueType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ class ReturnValueTest {
 
     @Test
     void returnConstant() {
-        Instruction.Label label = new Instruction.Label();
+        Label label = new Label();
         Variable variable = new Variable("variable", ValueType.booleanType());
         Method method = new Method("foo", ValueType.emptyType(), List.of(), codeBuilder -> codeBuilder
                 .pushInteger(1)

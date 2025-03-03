@@ -1,6 +1,6 @@
 package com.bossymr.flow.state;
 
-import com.bossymr.flow.Instruction;
+import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.Expression;
 

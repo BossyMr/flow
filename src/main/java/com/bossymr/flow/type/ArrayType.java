@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * An {@code ArrayType} represents an array of a specific type.
  */
-public class ArrayType implements ValueType {
+public final class ArrayType implements ValueType {
 
     private final ValueType elementType;
 

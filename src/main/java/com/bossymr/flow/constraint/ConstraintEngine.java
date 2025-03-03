@@ -5,7 +5,7 @@ import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.expression.LiteralExpression;
 import com.bossymr.flow.expression.UnaryExpression;
 import com.bossymr.flow.state.FlowSnapshot;
-import com.bossymr.flow.state.Variable;
+import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.type.*;
 import io.github.cvc5.*;
 

@@ -1,5 +1,6 @@
 package com.bossymr.flow;
 
+import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.ArrayList;

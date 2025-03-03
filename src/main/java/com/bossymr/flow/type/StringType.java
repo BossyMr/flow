@@ -3,7 +3,7 @@ package com.bossymr.flow.type;
 /**
  * A {@code StringType} represents a string type.
  */
-public class StringType implements ValueType {
+public final class StringType implements ValueType {
 
     @Override
     public boolean isStructure() {
