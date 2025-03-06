@@ -66,9 +66,12 @@ public final class CallInstruction implements Instruction {
                     }
                     return child;
                 });
-                snapshot.push(returnValue);
-                FlowSnapshot successor = snapshot.successorState(method);
-                successors.add(successor);
+                FlowSnapshot successor = snapshot.successorState(exitPoint);
+                for (int i = 0; i < arguments.size(); i++) {
+                    successor.pop();
+                }
+                successor.push(returnValue);
+                successors.add(successor.successorState(method));
             }
         }
         return successors;

@@ -15,6 +15,7 @@ public class FlowSnapshot {
     private final FlowEngine engine;
 
     private final FlowSnapshot predecessor;
+    private final FlowSnapshot weakPredecessor;
     private final Set<FlowSnapshot> successors = new HashSet<>();
     private final Instruction instruction;
 
@@ -25,12 +26,14 @@ public class FlowSnapshot {
         this.engine = engine;
         this.instruction = instruction;
         this.predecessor = null;
+        this.weakPredecessor = null;
         this.stack = new ArrayList<>();
         this.constraints = new HashSet<>();
     }
 
-    private FlowSnapshot(FlowEngine engine, FlowSnapshot predecessor, Instruction instruction) {
+    private FlowSnapshot(FlowEngine engine, FlowSnapshot predecessor, FlowSnapshot weakPredecessor, Instruction instruction) {
         this.engine = engine;
+        this.weakPredecessor = weakPredecessor;
         this.instruction = instruction;
         Objects.requireNonNull(predecessor);
         this.predecessor = predecessor;
@@ -65,7 +68,19 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState() {
-        FlowSnapshot successor = new FlowSnapshot(this.engine, this, this.instruction);
+        FlowSnapshot successor = new FlowSnapshot(this.engine, this, null, this.instruction);
+        getSuccessors().add(successor);
+        return successor;
+    }
+
+    /**
+     * Create a successor to this snapshot representing the same instruction as this snapshot.
+     *
+     * @param snapshot a disconnected predecessor to this snapshot.
+     * @return a new snapshot.
+     */
+    public FlowSnapshot successorState(FlowSnapshot snapshot) {
+        FlowSnapshot successor = new FlowSnapshot(this.engine, this, snapshot, this.instruction);
         getSuccessors().add(successor);
         return successor;
     }
@@ -77,7 +92,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState(Instruction instruction) {
-        FlowSnapshot successor = new FlowSnapshot(this.engine, this, instruction);
+        FlowSnapshot successor = new FlowSnapshot(this.engine, this, null, instruction);
         getSuccessors().add(successor);
         return successor;
     }
@@ -127,7 +142,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot disconnectedState() {
-        return new FlowSnapshot(this.engine, this, null);
+        return new FlowSnapshot(this.engine, this, null, null);
     }
 
     /**
@@ -155,6 +170,14 @@ public class FlowSnapshot {
      */
     public FlowSnapshot getPredecessor() {
         return predecessor;
+    }
+
+    /**
+     * Returns the weak predecessor of this snapshot.
+     * @return the weak predecessor of this snapshot.
+     */
+    public FlowSnapshot getWeakPredecessor() {
+        return weakPredecessor;
     }
 
     /**

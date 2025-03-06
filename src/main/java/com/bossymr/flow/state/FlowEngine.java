@@ -3,7 +3,6 @@ package com.bossymr.flow.state;
 import com.bossymr.flow.Method;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 

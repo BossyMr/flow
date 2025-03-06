@@ -1,101 +1,244 @@
 package com.bossymr.flow.state;
 
-import com.bossymr.flow.instruction.Instruction;
+import com.bossymr.flow.Method;
 import com.bossymr.flow.expression.Expression;
+import com.bossymr.flow.instruction.CallInstruction;
+import com.bossymr.flow.instruction.Instruction;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FlowGraph {
 
-    private FlowGraph() {}
+    private final StringBuilder buffer = new StringBuilder();
 
-    public static String getText(FlowEngine engine) {
-        Set<FlowMethod> methods = engine.getMethods();
-        StringBuilder builder = new StringBuilder();
-        List<FlowSnapshot> snapshots = new ArrayList<>();
-        builder.append("digraph {\n");
-        builder.append("rankdir=LR;\n");
+    /**
+     * A list of edges that connect nodes that are in different clusters. We need to add these edges after all clusters
+     * have been added, otherwise a node might be shown in the wrong cluster.
+     * <p>
+     * <pre>{@code
+     * digraph {
+     *     subgraph cluster_A {
+     *         A;
+     *         // if we define 'A -> B' here, B would be shown inside cluster_A
+     *     }
+     *     subgraph cluster_B {
+     *         B;
+     *     }
+     *     A -> B;
+     * }
+     * }</pre>
+     */
+    private final List<String> edges = new ArrayList<>();
+
+    private final FlowEngine engine;
+
+    /**
+     * A list of discovered methods. The index of a method in this list represents it's ID.
+     */
+    private final List<Method> methods = new ArrayList<>();
+
+    public FlowGraph(FlowEngine engine) {
+        this.engine = engine;
+        buffer.append("digraph {").append("\n");
+        buffer.append("rankdir=LR;").append("\n");
+    }
+
+    /**
+     * Adds the provided methods and all dependent methods to this graph.
+     *
+     * @param methods the methods.
+     * @return this graph.
+     */
+    public FlowGraph withMethods(Method... methods) {
+        for (Method method : methods) {
+            withMethod(method);
+        }
+        return this;
+    }
+
+    /**
+     * Adds the provided methods and all dependent methods to this graph.
+     *
+     * @param methods the methods.
+     * @return this graph.
+     */
+    public FlowGraph withMethods(FlowMethod... methods) {
         for (FlowMethod method : methods) {
-            writeMethod(builder, snapshots, method);
+            withMethod(method);
         }
-        builder.append("}");
-        return builder.toString();
+        return this;
     }
 
-    public static void getGraph(File outputFile, FlowEngine engine) throws IOException, InterruptedException {
-        if (outputFile.getParentFile() != null) {
-            Files.createDirectories(outputFile.getParentFile().toPath());
+    /**
+     * Adds the provided method and all dependent methods to this graph. This includes all methods that are called by
+     * this method.
+     *
+     * @param method the method.
+     * @return this graph.
+     */
+    public FlowGraph withMethod(Method method) {
+        if (methods.contains(method)) {
+            // We have already added this method to this graph.
+            return this;
         }
-        if (!outputFile.exists()) {
-            Files.createFile(outputFile.toPath());
-        }
-        String text = getText(engine);
-        Path instructionFile = Files.createTempFile("dataFlow", ".dot");
-        Files.writeString(instructionFile, text);
-        Process process = new ProcessBuilder("dot", "-Tsvg")
-                .redirectOutput(outputFile)
-                .start();
-        OutputStream inputStream = process.getOutputStream();
-        OutputStreamWriter writer = new OutputStreamWriter(inputStream);
-        writer.write(text);
-        writer.close();
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            String message = new String(process.getErrorStream().readAllBytes(), Charset.defaultCharset());
-            throw new IOException("process exited with code: " + exitCode + " - " + message);
-        }
-    }
-
-    private static void writeMethod(StringBuilder builder, List<FlowSnapshot> snapshots, FlowMethod method) {
-        builder.append("subgraph ");
-        builder.append(method.getMethod().getName());
-        builder.append(" {\nstyle=dotted;\n");
-        Deque<FlowSnapshot> queue = new ArrayDeque<>();
-        queue.add(method.getEntryPoint());
-        while (!queue.isEmpty()) {
-            FlowSnapshot snapshot = queue.pop();
-            queue.addAll(snapshot.getSuccessors());
-            writeSnapshot(builder, snapshots, snapshot);
-            FlowSnapshot predecessor = snapshot.getPredecessor();
-            if (predecessor != null) {
-                builder.append(snapshots.indexOf(predecessor));
-                builder.append(" -> ");
-                builder.append(snapshots.size() - 1);
-                builder.append(";\n");
+        methods.add(method);
+        for (int currentMethod = methods.size() - 1; currentMethod < methods.size(); currentMethod++) {
+            method = methods.get(currentMethod);
+            buffer.append("subgraph ");
+            buffer.append("cluster_").append(method.getName());
+            buffer.append("{").append("\n");
+            buffer.append("style=dotted;").append("\n");
+            buffer.append("label=\"").append(method.getName()).append("\"").append("\n");
+            FlowMethod flowMethod = engine.getMethod(method);
+            List<FlowSnapshot> snapshots = new ArrayList<>(flowMethod.getExitPoints());
+            for (int currentSnapshot = 0; currentSnapshot < snapshots.size(); currentSnapshot++) {
+                FlowSnapshot snapshot = snapshots.get(currentSnapshot);
+                withSnapshot(snapshots, method, snapshot);
+                FlowSnapshot predecessor = snapshot.getPredecessor();
+                if (predecessor != null && !snapshots.contains(predecessor)) {
+                    snapshots.add(predecessor);
+                }
+                if (snapshot.getInstruction() instanceof CallInstruction callInstruction) {
+                    Method callMethod = callInstruction.getMethod();
+                    if (!methods.contains(callMethod)) {
+                        methods.add(callMethod);
+                    }
+                    FlowSnapshot callSnapshot = snapshot.getWeakPredecessor();
+                    if (callSnapshot != null) {
+                        withExternalEdge(snapshots, method, snapshot, callMethod, callSnapshot);
+                    }
+                }
+                if (predecessor != null) {
+                    withInternalEdge(snapshots, method, predecessor, snapshot);
+                }
             }
+            buffer.append("}").append("\n");
         }
-        builder.append("}\n");
+        return this;
     }
 
-    private static void writeSnapshot(StringBuilder builder, List<FlowSnapshot> snapshots, FlowSnapshot snapshot) {
-        snapshots.add(snapshot);
-        builder.append(snapshots.size() - 1);
-        builder.append("[shape=plain,label=<<table BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">");
+    /**
+     * Adds the provided method and all dependent methods to this graph. This includes all methods that are called by
+     * this method.
+     *
+     * @param method the method.
+     * @return this graph.
+     */
+    public FlowGraph withMethod(FlowMethod method) {
+        return withMethod(method.getMethod());
+    }
+
+    private void withSnapshot(List<FlowSnapshot> snapshots, Method method, FlowSnapshot snapshot) {
+        buffer.append("\"").append(getMethodIndex(method)).append("_").append(getSnapshotIndex(snapshots, snapshot)).append("\"");
+        buffer.append("[shape=plain,label=<<table BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">");
         Instruction instruction = snapshot.getInstruction();
+        // The first snapshot in each method is not associated with an instruction.
         if (instruction != null) {
-            builder.append("<tr><td>").append(writeText(instruction.toString())).append("</td></tr>\n");
+            buffer.append("<tr><td>");
+            withText(instruction.toString());
+            buffer.append("</td></tr>\n");
         }
-        builder.append("<tr><td>").append("Constraints").append("</td></tr>\n");
+        buffer.append("<tr><td>").append("Constraints").append("</td></tr>\n");
         for (Expression constraint : snapshot.getConstraints()) {
-            builder.append("<tr><td>").append(writeText(constraint.toString())).append("</td></tr>\n");
+            buffer.append("<tr><td>");
+            withText(constraint.toString());
+            buffer.append("</td></tr>\n");
         }
-        builder.append("<tr><td>").append("Stack").append("</td></tr>\n");
+        buffer.append("<tr><td>").append("Stack").append("</td></tr>\n");
+        // Write the stack in reverse order, so that the last element (the top of the stack) is written first.
         for (Expression expression : snapshot.getStack().reversed()) {
-            builder.append("<tr><td>").append(writeText(expression.toString())).append("</td></tr>\n");
+            buffer.append("<tr><td>");
+            withText(expression.toString());
+            buffer.append("</td></tr>\n");
         }
-        builder.append("</table>>];\n");
+        buffer.append("</table>>];\n");
     }
 
-    private static String writeText(String text) {
-        return text.replaceAll("<", "&lt;")
+    private void withInternalEdge(List<FlowSnapshot> snapshots, Method method, FlowSnapshot fromSnapshot, FlowSnapshot toSnapshot) {
+        int methodIndex = getMethodIndex(method);
+        buffer.append("\"").append(methodIndex).append("_").append(getSnapshotIndex(snapshots, fromSnapshot)).append("\"");
+        buffer.append(" -> ");
+        buffer.append("\"").append(methodIndex).append("_").append(getSnapshotIndex(snapshots, toSnapshot)).append("\"");
+        buffer.append(";\n");
+    }
+
+    private void withExternalEdge(List<FlowSnapshot> snapshots, Method fromMethod, FlowSnapshot fromSnapshot, Method toMethod, FlowSnapshot toSnapshot) {
+        edges.add("\"" + getMethodIndex(fromMethod) + "_" + getSnapshotIndex(snapshots, fromSnapshot) + "\"" + " -> " +
+                "\"" + getMethodIndex(toMethod) + "_" + getExternalSnapshotIndex(toMethod, toSnapshot) + "\"" +
+                "[style=dotted]" + ";" + "\n");
+    }
+
+    /**
+     * Cleans and writes the provided text to the buffer.
+     *
+     * @param text the text.
+     */
+    private void withText(String text) {
+        buffer.append(text.replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
-                .replaceAll("\"", "&quot;");
+                .replaceAll("\"", "&quot;"));
+    }
+
+    /**
+     * Returns the ID of the specified method.
+     *
+     * @param method the method.
+     * @return the ID of the specified method.
+     */
+    private int getMethodIndex(Method method) {
+        int index = methods.indexOf(method);
+        if (index >= 0) {
+            return index;
+        }
+        methods.add(method);
+        return methods.size() - 1;
+    }
+
+    /**
+     * Returns the ID of the specified snapshot.
+     *
+     * @param snapshots a list of snapshots.
+     * @param snapshot the snapshot.
+     * @return the ID of the specified snapshot.
+     */
+    private int getSnapshotIndex(List<FlowSnapshot> snapshots, FlowSnapshot snapshot) {
+        int index = snapshots.indexOf(snapshot);
+        if (index < 0) {
+            throw new IllegalArgumentException("cannot find index of snapshot: " + snapshot);
+        }
+        return index;
+    }
+
+    /**
+     * Returns the ID of the specified snapshot. The snapshot must be an exit point of the provided method.
+     *
+     * @param method the method.
+     * @param exitPoint the snapshot.
+     * @return the ID of the specified snapshot.
+     * @throws IllegalArgumentException if the specified snapshot is not an exit point of the provided method.
+     */
+    private int getExternalSnapshotIndex(Method method, FlowSnapshot exitPoint) {
+        FlowMethod flowMethod = engine.getMethod(method);
+        List<FlowSnapshot> exitPoints = flowMethod.getExitPoints();
+        // We start by visiting the exit points of a method.
+        // As a result, we know the index of the snapshot without having to store a list of snapshots for every method.
+        return exitPoints.indexOf(exitPoint);
+    }
+
+    /**
+     * Returns this graph as a {@code .dot} file.
+     *
+     * @return this graph.
+     */
+    public String getText() {
+        for (String edge : edges) {
+            buffer.append(edge).append("\n");
+        }
+        // We try as much as possible to let this method be called more than once.
+        // As a result, we clear the list of edges, so that an edge is not added more than once.
+        // We also don't write the final '}' to the buffer, since that would close the graph.
+        edges.clear();
+        return buffer + "}";
     }
 }
