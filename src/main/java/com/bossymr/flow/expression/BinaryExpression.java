@@ -1,8 +1,6 @@
 package com.bossymr.flow.expression;
 
-import com.bossymr.flow.type.BooleanType;
-import com.bossymr.flow.type.IntegerType;
-import com.bossymr.flow.type.NumericType;
+import com.bossymr.flow.instruction.BinaryOperator;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.function.Function;
@@ -12,7 +10,7 @@ import java.util.function.Function;
  */
 public final class BinaryExpression implements Expression {
 
-    private final Operator operator;
+    private final BinaryOperator operator;
     private final ValueType type;
     private final Expression left;
     private final Expression right;
@@ -25,7 +23,7 @@ public final class BinaryExpression implements Expression {
      * @param right the expression to the right of the operator.
      * @throws IllegalArgumentException if the expression is not valid.
      */
-    public BinaryExpression(Operator operator, Expression left, Expression right) {
+    public BinaryExpression(BinaryOperator operator, Expression left, Expression right) {
         ValueType type = operator.getType(left.getType(), right.getType());
         if (type == null) {
             throw new IllegalArgumentException("binary expression '" + left + " " + operator + " " + right + "' is not valid");
@@ -60,7 +58,7 @@ public final class BinaryExpression implements Expression {
      *
      * @return the operator of this expression.
      */
-    public Operator getOperator() {
+    public BinaryOperator getOperator() {
         return operator;
     }
 
@@ -87,136 +85,4 @@ public final class BinaryExpression implements Expression {
         return "(" + getLeft() + " " + getOperator() + " " + getRight() + ")";
     }
 
-    /**
-     * An {@code Operator} represents a binary operator.
-     */
-    public enum Operator {
-        EQUAL_TO("=") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'EQUAL_TO' can be applied to any two expressions.
-                return ValueType.booleanType();
-            }
-        },
-        GREATER_THAN(">") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'GREATER_THAN' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return ValueType.booleanType();
-            }
-        },
-        LESS_THAN("<") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'LESS_THAN' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return ValueType.booleanType();
-            }
-        },
-        ADD("+") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'ADD' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return left;
-            }
-        },
-        SUBTRACT("+") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'SUBTRACT' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return left;
-            }
-        },
-        MULTIPLY("*") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'MULTIPLY' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return left;
-            }
-        },
-        DIVIDE("/") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'DIVIDE' can be applied to any two numeric expressions.
-                if (!(left instanceof NumericType) || !(right instanceof NumericType)) {
-                    return null;
-                }
-                return left;
-            }
-        },
-        MODULO("%") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'MODULO' can be applied to any two integer expressions.
-                if (!(left instanceof IntegerType) || !(right instanceof IntegerType)) {
-                    return null;
-                }
-                return left;
-            }
-        },
-        AND("AND") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'AND' can be applied to any two boolean expressions.
-                if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
-                    return null;
-                }
-                return ValueType.booleanType();
-            }
-        },
-        XOR("XOR") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'XOR' can be applied to any two boolean expressions.
-                if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
-                    return null;
-                }
-                return ValueType.booleanType();
-            }
-        },
-        OR("OR") {
-            @Override
-            ValueType getType(ValueType left, ValueType right) {
-                // 'OR' can be applied to any two boolean expressions.
-                if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
-                    return null;
-                }
-                return ValueType.booleanType();
-            }
-        };
-
-        private final String name;
-
-        Operator(String name) {
-            this.name = name;
-        }
-
-        /**
-         * Returns the type of an expression with this operator.
-         *
-         * @param left the type of the expression to the left of this operator.
-         * @param right the type of the expression to the right of this operator.
-         * @return the type of an expression with this operator, or {@code null} if the expression isn't valid.
-         */
-        abstract ValueType getType(ValueType left, ValueType right);
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
 }

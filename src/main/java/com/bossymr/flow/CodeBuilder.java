@@ -2,6 +2,7 @@ package com.bossymr.flow;
 
 import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.instruction.*;
+import com.bossymr.flow.type.BooleanType;
 import com.bossymr.flow.type.EmptyType;
 import com.bossymr.flow.type.ValueType;
 
@@ -35,15 +36,33 @@ public class CodeBuilder {
         return this;
     }
 
-    public CodeBuilder conditionalJump(Label thenLabel) {
-        validateStack(1, List.of(new InstructionKind(ValueType.emptyType(), ValueType.booleanType())));
-        instructions.add(new ConditionalJumpInstruction(thenLabel));
+    /**
+     * Adds a branch instruction to this code block.
+     *
+     * @param kind the type of branch
+     * @param label the target
+     * @return this builder
+     */
+    public CodeBuilder branch(BranchKind kind, Label label) {
+        if (kind == BranchKind.CONDITIONALLY) {
+            if (stack.isEmpty()) {
+                throw new IllegalArgumentException("branch '" + kind + "': " + stack);
+            }
+            ValueType argument = stack.removeLast();
+            if (!(argument instanceof BooleanType)) {
+                throw new IllegalArgumentException("branch '" + kind + "': " + argument);
+            }
+        }
+        instructions.add(new BranchInstruction(kind, label));
         return this;
     }
 
+    public CodeBuilder conditionalJump(Label thenLabel) {
+        return branch(BranchKind.CONDITIONALLY, thenLabel);
+    }
+
     public CodeBuilder jump(Label label) {
-        instructions.add(new JumpInstruction(label));
-        return this;
+        return branch(BranchKind.ALWAYS, label);
     }
 
     public CodeBuilder call(Method method) {
@@ -107,177 +126,141 @@ public class CodeBuilder {
         return this;
     }
 
-    public CodeBuilder pushByte(byte value) {
-        stack.add(ValueType.integerType());
-        instructions.add(new ConstantByteInstruction(value));
+    /**
+     * Adds a push instruction to this code block.
+     *
+     * @param constant the constant
+     * @return this builder
+     */
+    public CodeBuilder push(Constant<?> constant) {
+        stack.add(constant.getType());
+        instructions.add(new PushInstruction(constant));
         return this;
+    }
+
+    public CodeBuilder pushByte(byte value) {
+        return push(new Constant.Integer(value));
     }
 
     public CodeBuilder pushInteger(int value) {
-        stack.add(ValueType.integerType());
-        instructions.add(new ConstantIntegerInstruction(value));
-        return this;
+        return push(new Constant.Integer(value));
     }
 
-
     public CodeBuilder pushLong(long value) {
-        stack.add(ValueType.integerType());
-        instructions.add(new ConstantLongInstruction(value));
-        return this;
+        return push(new Constant.Integer(value));
     }
 
     public CodeBuilder pushString(String value) {
-        stack.add(ValueType.stringType());
-        instructions.add(new ConstantStringInstruction(value));
-        return this;
+        return push(new Constant.String(value));
     }
 
-
     public CodeBuilder pushBoolean(boolean value) {
-        stack.add(ValueType.booleanType());
-        instructions.add(new ConstantBooleanInstruction(value));
+        return push(new Constant.Boolean(value));
+    }
+
+    /**
+     * Adds a binary instruction to this code block.
+     *
+     * @param operator the binary operator
+     * @return this builder
+     * @throws IllegalArgumentException if the stack is not valid
+     */
+    public CodeBuilder binary(BinaryOperator operator) {
+        if (stack.size() < 2) {
+            throw new IllegalArgumentException("binary operation '" + operator + "': " + stack);
+        }
+        List<ValueType> arguments = stack.subList(stack.size() - 2, stack.size());
+        ValueType left = arguments.getFirst();
+        ValueType right = arguments.getLast();
+        ValueType result = operator.getType(left, right);
+        if (result == null) {
+            throw new IllegalArgumentException("binary operation '" + operator + "': " + arguments);
+        }
+        arguments.clear();
+        stack.add(result);
+        instructions.add(new BinaryInstruction(operator));
         return this;
     }
 
     public CodeBuilder add() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType()),
-                new InstructionKind(ValueType.stringType(), ValueType.stringType(), ValueType.stringType())
-        ));
-        stack.add(type.output());
-        instructions.add(new AddInstruction());
-        return this;
+        return binary(BinaryOperator.ADD);
     }
 
     public CodeBuilder subtract() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new SubtractInstruction());
-        return this;
+        return binary(BinaryOperator.SUBTRACT);
     }
 
     public CodeBuilder multiply() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new MultiplyInstruction());
-        return this;
+        return binary(BinaryOperator.MULTIPLY);
     }
 
     public CodeBuilder divide() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.numericType(), ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new DivideInstruction());
-        return this;
+        return binary(BinaryOperator.DIVIDE);
     }
 
     public CodeBuilder modulo() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType(), ValueType.integerType())
-        ));
-        stack.add(type.output());
-        instructions.add(new ModuloInstruction());
+        return binary(BinaryOperator.MODULO);
+    }
+
+    public CodeBuilder equalTo() {
+        return binary(BinaryOperator.EQUAL_TO);
+    }
+
+    public CodeBuilder greaterThan() {
+        return binary(BinaryOperator.GREATER_THAN);
+    }
+
+    public CodeBuilder lessThan() {
+        return binary(BinaryOperator.LESS_THAN);
+    }
+
+    public CodeBuilder and() {
+        return binary(BinaryOperator.AND);
+    }
+
+    public CodeBuilder xor() {
+        return binary(BinaryOperator.XOR);
+    }
+
+    public CodeBuilder or() {
+        return binary(BinaryOperator.OR);
+    }
+
+    /**
+     * Adds a unary instruction to this code block.
+     *
+     * @param operator the unary operator
+     * @return this builder
+     * @throws IllegalArgumentException if the stack is not valid
+     */
+    public CodeBuilder unary(UnaryOperator operator) {
+        if (stack.isEmpty()) {
+            throw new IllegalArgumentException("unary operation '" + operator + "': " + stack);
+        }
+        ValueType argument = stack.removeLast();
+        ValueType result = operator.getType(argument);
+        if (result == null) {
+            throw new IllegalArgumentException("unary operation '" + operator + "': " + argument);
+        }
+        stack.add(result);
+        instructions.add(new UnaryInstruction(operator));
         return this;
     }
 
     public CodeBuilder realToInteger() {
-        InstructionKind type = validateStack(1, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new RealToIntegerInstruction());
-        return this;
+        return unary(UnaryOperator.REAL_TO_INTEGER);
     }
 
     public CodeBuilder integerToReal() {
-        InstructionKind type = validateStack(1, List.of(
-                new InstructionKind(ValueType.numericType(), ValueType.integerType())
-        ));
-        stack.add(type.output());
-        instructions.add(new IntegerToRealInstruction());
-        return this;
-    }
-
-    public CodeBuilder equalTo() {
-        validateStackLength(2);
-        stack.add(ValueType.booleanType());
-        instructions.add(new EqualToInstruction());
-        return this;
-    }
-
-    public CodeBuilder greaterThan() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.booleanType(), ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new GreaterThanInstruction());
-        return this;
-    }
-
-    public CodeBuilder lessThan() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.booleanType(), ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new LessThanInstruction());
-        return this;
-    }
-
-    public CodeBuilder and() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
-        ));
-        stack.add(type.output());
-        instructions.add(new AndInstruction());
-        return this;
-    }
-
-    public CodeBuilder xor() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
-        ));
-        stack.add(type.output());
-        instructions.add(new XorInstruction());
-        return this;
-    }
-
-    public CodeBuilder or() {
-        InstructionKind type = validateStack(2, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.booleanType(), ValueType.booleanType())
-        ));
-        stack.add(type.output());
-        instructions.add(new OrInstruction());
-        return this;
+        return unary(UnaryOperator.INTEGER_TO_REAL);
     }
 
     public CodeBuilder not() {
-        InstructionKind type = validateStack(1, List.of(
-                new InstructionKind(ValueType.booleanType(), ValueType.booleanType())
-        ));
-        stack.add(type.output());
-        instructions.add(new NotInstruction());
-        return this;
+        return unary(UnaryOperator.NOT);
     }
 
     public CodeBuilder negate() {
-        InstructionKind type = validateStack(1, List.of(
-                new InstructionKind(ValueType.integerType(), ValueType.integerType()),
-                new InstructionKind(ValueType.numericType(), ValueType.numericType())
-        ));
-        stack.add(type.output());
-        instructions.add(new NegateInstruction());
-        return this;
+        return unary(UnaryOperator.NEGATE);
     }
 
     public CodeBuilder assign(Variable variable) {

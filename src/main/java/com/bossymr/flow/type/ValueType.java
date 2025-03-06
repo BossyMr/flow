@@ -65,6 +65,15 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
     boolean isArray();
 
     /**
+     * Checks whether this type represents an empty type.
+     *
+     * @return whether this type represents an empty type.
+     */
+    default boolean isEmpty() {
+        return this instanceof EmptyType;
+    }
+
+    /**
      * Create a type representing an array of this type.
      *
      * @return a type representing an array of type.

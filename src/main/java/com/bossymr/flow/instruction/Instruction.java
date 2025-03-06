@@ -9,10 +9,11 @@ import java.util.List;
 /**
  * An {@code Instruction} represents an instruction.
  */
-public sealed interface Instruction permits AssignInstruction, CallInstruction, ConditionalJumpInstruction, DuplicateInstruction, JumpInstruction, LinearInstruction, PseudoInstruction, ReturnInstruction {
+public sealed interface Instruction permits AssignInstruction, BinaryInstruction, CallInstruction, BranchInstruction, DuplicateInstruction, PseudoInstruction, PushInstruction, ReturnInstruction, UnaryInstruction {
 
     /**
-     * Calls this instruction with the current memory state.
+     * Calls this instruction with the current memory state. This instruction should, as much as possible, aim to
+     * continue using the provided memory state. However, if it is determined that
      *
      * @param engine the engine used to compute the data flow.
      * @param method the current method.

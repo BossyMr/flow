@@ -2,7 +2,7 @@ package com.bossymr.flow.state;
 
 import com.bossymr.flow.Method;
 import com.bossymr.flow.expression.Expression;
-import com.bossymr.flow.instruction.Instruction;
+import com.bossymr.flow.instruction.*;
 import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.type.ValueType;
 

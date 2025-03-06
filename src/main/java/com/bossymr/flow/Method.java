@@ -14,51 +14,47 @@ import java.util.function.Consumer;
 public class Method {
 
     private final String name;
-    private final ValueType returnType;
+    private final MethodKind signature;
     private final List<Instruction> instructions;
-    private final List<ValueType> arguments;
 
-    public Method(String name, ValueType returnType, List<ValueType> arguments, Consumer<CodeBuilder> code) {
+    /**
+     * Creates a new {@code Method}.
+     * @param name the method's name
+     * @param signature the method's signature
+     * @param code the method's body
+     */
+    public Method(String name, MethodKind signature, Consumer<CodeBuilder> code) {
         this.name = name;
-        this.returnType = returnType;
-        this.arguments = List.copyOf(arguments);
-        CodeBuilder codeBuilder = new CodeBuilder(this, new ArrayList<>(arguments));
+        this.signature = signature;
+        CodeBuilder codeBuilder = new CodeBuilder(this, new ArrayList<>(signature.getArguments()));
         code.accept(codeBuilder);
         List<Instruction> block = codeBuilder.getInstructions();
         this.instructions = List.copyOf(block);
     }
 
     /**
-     * Returns the name of this method.
-     *
-     * @return the name of this method.
+     * {@return the name of this method}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the return type of this method.
-     *
-     * @return the return type of this method.
+     * {@return the return type of this method}
      */
     public ValueType getReturnType() {
-        return returnType;
+        return signature.getReturnType();
     }
 
     /**
-     * Returns all parameters in this method.
-     *
-     * @return all parameters in this method.
+     * {@return all parameters in this method}
      */
     public List<ValueType> getArguments() {
-        return arguments;
+        return signature.getArguments();
     }
 
     /**
-     * Returns all instructions in this method.
-     *
-     * @return all instructions in this method.
+     * {@return all instructions in this method}
      */
     public List<Instruction> getInstructions() {
         return instructions;

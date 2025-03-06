@@ -54,7 +54,7 @@ public final class CallInstruction implements Instruction {
                 Expression expression = target.getParameter(arguments.size() - i);
                 Expression value = snapshot.getStack().get(snapshot.getStack().size() - i);
                 table.put(expression, value);
-                copy.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, expression, value));
+                copy.require(new BinaryExpression(BinaryOperator.EQUAL_TO, expression, value));
             }
             // All constraints from the call site have been added to the disconnected state, as such, we can check
             // if it is possible for this memory state to be returned given the arguments we pass to the method.

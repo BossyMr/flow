@@ -11,6 +11,8 @@ import java.util.List;
 
 /**
  * Assign the variable at the top of the stack to the specified variable.
+ * <p>
+ * TODO: Rename to StoreInstruction. Create matching LoadInstruction.
  */
 public final class AssignInstruction implements Instruction {
 
@@ -23,7 +25,7 @@ public final class AssignInstruction implements Instruction {
     @Override
     public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
         Expression value = snapshot.pop();
-        snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, variable, value));
+        snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, variable, value));
         FlowSnapshot successor = snapshot.successorState(method);
         return List.of(successor);
     }

@@ -1,6 +1,6 @@
 package com.bossymr.flow.expression;
 
-import com.bossymr.flow.type.RealType;
+import com.bossymr.flow.Constant;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.function.Function;
@@ -10,12 +10,10 @@ import java.util.function.Function;
  */
 public final class LiteralExpression implements Expression {
 
-    private final ValueType type;
-    private final Object value;
+    private final Constant<?> constant;
 
-    private LiteralExpression(ValueType type, Object value) {
-        this.type = type;
-        this.value = value;
+    public LiteralExpression(Constant<?> constant) {
+        this.constant = constant;
     }
 
     /**
@@ -25,7 +23,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression booleanLiteral(boolean value) {
-        return new LiteralExpression(ValueType.booleanType(), value);
+        return new LiteralExpression(new Constant.Boolean(value));
     }
 
     /**
@@ -35,7 +33,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression stringLiteral(String value) {
-        return new LiteralExpression(ValueType.stringType(), value);
+        return new LiteralExpression(new Constant.String(value));
     }
 
     /**
@@ -45,7 +43,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression numericLiteral(long value) {
-        return new LiteralExpression(ValueType.numericType(), new RealType.Fraction(value, 1));
+        return new LiteralExpression(new Constant.Numeric(value));
     }
 
     /**
@@ -56,7 +54,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression numericLiteral(long numerator, long denominator) {
-        return new LiteralExpression(ValueType.numericType(), new RealType.Fraction(numerator, denominator));
+        return new LiteralExpression(new Constant.Numeric(numerator, denominator));
     }
 
     /**
@@ -66,12 +64,12 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression integerLiteral(long value) {
-        return new LiteralExpression(ValueType.integerType(), value);
+        return new LiteralExpression(new Constant.Integer(value));
     }
 
     @Override
     public ValueType getType() {
-        return type;
+        return constant.getType();
     }
 
     @Override
@@ -85,14 +83,11 @@ public final class LiteralExpression implements Expression {
      * @return the literal value of this expression.
      */
     public Object getValue() {
-        return value;
+        return constant.getValue();
     }
 
     @Override
     public String toString() {
-        if (value instanceof String) {
-            return "\"" + value + "\"";
-        }
-        return value.toString();
+        return constant.toString();
     }
 }

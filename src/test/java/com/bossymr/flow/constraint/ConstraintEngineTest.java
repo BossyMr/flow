@@ -3,6 +3,8 @@ package com.bossymr.flow.constraint;
 import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.LiteralExpression;
 import com.bossymr.flow.expression.UnaryExpression;
+import com.bossymr.flow.instruction.UnaryOperator;
+import com.bossymr.flow.instruction.BinaryOperator;
 import com.bossymr.flow.state.FlowEngine;
 import com.bossymr.flow.state.FlowSnapshot;
 
@@ -18,7 +20,7 @@ class ConstraintEngineTest {
     void zeroEqualToOneNotReachable() {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
-        snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(1)));
+        snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(1)));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.NOT_REACHABLE, reachable);
     }
@@ -28,7 +30,7 @@ class ConstraintEngineTest {
     void zeroEqualToZeroReachable() {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
-        snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(0)));
+        snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(0)));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
     }
@@ -38,7 +40,7 @@ class ConstraintEngineTest {
     void zeroIntEqualToZeroRealReachable() {
         FlowEngine engine = new FlowEngine();
         FlowSnapshot snapshot = FlowSnapshot.emptyState(engine);
-        snapshot.require(new BinaryExpression(BinaryExpression.Operator.EQUAL_TO, LiteralExpression.integerLiteral(0), new UnaryExpression(UnaryExpression.Operator.REAL_TO_INTEGER, LiteralExpression.numericLiteral(0))));
+        snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), new UnaryExpression(UnaryOperator.REAL_TO_INTEGER, LiteralExpression.numericLiteral(0))));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
     }

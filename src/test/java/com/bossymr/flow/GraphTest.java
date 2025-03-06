@@ -11,7 +11,7 @@ class GraphTest {
 
     @Test
     void functionCall() {
-        Method abs = new Method("abs", ValueType.integerType(), List.of(ValueType.integerType()), codeBuilder -> codeBuilder
+        Method abs = new Method("abs", MethodKind.of(ValueType.integerType(), ValueType.integerType()), codeBuilder -> codeBuilder
                 .duplicate()
                 .pushInteger(0)
                 .greaterThan()
@@ -20,7 +20,7 @@ class GraphTest {
                         elseHandler -> elseHandler
                                 .negate()
                                 .returnValue()));
-        Method foo = new Method("foo", ValueType.emptyType(), List.of(), codeBuilder -> codeBuilder
+        Method foo = new Method("foo", MethodKind.of(ValueType.emptyType()), codeBuilder -> codeBuilder
                 .pushInteger(-1)
                 .call(abs)
                 .pushInteger(1)
