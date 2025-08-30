@@ -1,25 +1,23 @@
 package com.bossymr.flow.instruction;
 
-import com.bossymr.flow.state.FlowEngine;
-import com.bossymr.flow.state.FlowMethod;
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.state.FlowSnapshot;
 
 import java.util.List;
 
 /**
- * An {@code Instruction} represents an instruction.
+ * An instruction.
  */
-public sealed interface Instruction permits AssignInstruction, BinaryInstruction, CallInstruction, BranchInstruction, DuplicateInstruction, PseudoInstruction, PushInstruction, ReturnInstruction, UnaryInstruction {
+public sealed interface Instruction permits LinearInstruction, CallInstruction, BranchInstruction, ReturnInstruction, PseudoInstruction {
 
     /**
-     * Calls this instruction with the current memory state. This instruction should, as much as possible, aim to
-     * continue using the provided memory state. However, if it is determined that
+     * Calls this instruction with the current memory state. This instruction should modify the provided snapshot,
+     * then create a new snapshot belonging to the next instruction and return it.
      *
-     * @param engine the engine used to compute the data flow.
      * @param method the current method.
-     * @param snapshot the memory state.
-     * @return a list of possible memory states after this instruction.
+     * @param snapshot the current program state.
+     * @param successor the next instruction.
+     * @return a list of possible program states after this instruction.
      */
-    List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot);
-
+    List<FlowSnapshot> call(Flow.Method method, FlowSnapshot snapshot, Instruction successor);
 }

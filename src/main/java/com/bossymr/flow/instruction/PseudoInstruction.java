@@ -1,7 +1,6 @@
 package com.bossymr.flow.instruction;
 
-import com.bossymr.flow.state.FlowEngine;
-import com.bossymr.flow.state.FlowMethod;
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.state.FlowSnapshot;
 
 import java.util.List;
@@ -12,7 +11,8 @@ import java.util.List;
  */
 public sealed interface PseudoInstruction extends Instruction permits Label {
     @Override
-    default List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
-        return List.of(snapshot.successorState(method));
+    default List<FlowSnapshot> call(Flow.Method method, FlowSnapshot snapshot, Instruction successor) {
+        FlowSnapshot successorState = snapshot.successorState(successor);
+        return List.of(successorState);
     }
 }

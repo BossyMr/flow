@@ -1,17 +1,16 @@
 package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.Constant;
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.expression.LiteralExpression;
-import com.bossymr.flow.state.FlowEngine;
-import com.bossymr.flow.state.FlowMethod;
 import com.bossymr.flow.state.FlowSnapshot;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Pushes a value onto the stack.
  */
-public final class PushInstruction implements Instruction {
+public final class PushInstruction implements LinearInstruction {
 
     private final Constant<?> constant;
 
@@ -19,14 +18,19 @@ public final class PushInstruction implements Instruction {
         this.constant = constant;
     }
 
+    @Override
+    public void perform(Flow.Method method, FlowSnapshot snapshot) {
+        snapshot.push(new LiteralExpression(constant));
+
+    }
+
     public Constant<?> getConstant() {
         return constant;
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
-        snapshot.push(new LiteralExpression(constant));
-        FlowSnapshot successor = snapshot.successorState(method);
-        return List.of(successor);
+    public String toString() {
+        return "push(" + constant + ")";
     }
+
 }

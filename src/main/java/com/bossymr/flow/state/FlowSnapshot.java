@@ -1,5 +1,6 @@
 package com.bossymr.flow.state;
 
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.constraint.Constraint;
@@ -12,7 +13,7 @@ import java.util.*;
  */
 public class FlowSnapshot {
 
-    private final FlowEngine engine;
+    private final Flow flow;
 
     private final FlowSnapshot predecessor;
     private final FlowSnapshot weakPredecessor;
@@ -22,8 +23,8 @@ public class FlowSnapshot {
     private final Set<Expression> constraints;
     private final List<Expression> stack;
 
-    private FlowSnapshot(FlowEngine engine, Instruction instruction) {
-        this.engine = engine;
+    private FlowSnapshot(Flow flow, Instruction instruction) {
+        this.flow = flow;
         this.instruction = instruction;
         this.predecessor = null;
         this.weakPredecessor = null;
@@ -31,8 +32,8 @@ public class FlowSnapshot {
         this.constraints = new HashSet<>();
     }
 
-    private FlowSnapshot(FlowEngine engine, FlowSnapshot predecessor, FlowSnapshot weakPredecessor, Instruction instruction) {
-        this.engine = engine;
+    private FlowSnapshot(Flow flow, FlowSnapshot predecessor, FlowSnapshot weakPredecessor, Instruction instruction) {
+        this.flow = flow;
         this.weakPredecessor = weakPredecessor;
         this.instruction = instruction;
         Objects.requireNonNull(predecessor);
@@ -47,7 +48,7 @@ public class FlowSnapshot {
      * @param engine the current flow engine.
      * @return a new snapshot.
      */
-    public static FlowSnapshot emptyState(FlowEngine engine) {
+    public static FlowSnapshot emptyState(Flow engine) {
         return new FlowSnapshot(engine, null);
     }
 
@@ -58,7 +59,7 @@ public class FlowSnapshot {
      * @param instruction the instruction.
      * @return a new snapshot.
      */
-    public static FlowSnapshot emptyState(FlowEngine engine, Instruction instruction) {
+    public static FlowSnapshot emptyState(Flow engine, Instruction instruction) {
         return new FlowSnapshot(engine, instruction);
     }
 
@@ -68,7 +69,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState() {
-        FlowSnapshot successor = new FlowSnapshot(this.engine, this, null, this.instruction);
+        FlowSnapshot successor = new FlowSnapshot(this.flow, this, null, this.instruction);
         getSuccessors().add(successor);
         return successor;
     }
@@ -80,7 +81,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState(FlowSnapshot snapshot) {
-        FlowSnapshot successor = new FlowSnapshot(this.engine, this, snapshot, this.instruction);
+        FlowSnapshot successor = new FlowSnapshot(this.flow, this, snapshot, this.instruction);
         getSuccessors().add(successor);
         return successor;
     }
@@ -92,48 +93,9 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState(Instruction instruction) {
-        FlowSnapshot successor = new FlowSnapshot(this.engine, this, null, instruction);
+        FlowSnapshot successor = new FlowSnapshot(this.flow, this, null, instruction);
         getSuccessors().add(successor);
         return successor;
-    }
-
-    /**
-     * Create a successor to this snapshot. The new snapshot will have the instruction after this snapshot's
-     * instruction, as declared in the provided method.
-     *
-     * @param method the method.
-     * @return a new snapshot, or {@code null} if this is the last instruction is the provided method.
-     * @throws IllegalArgumentException if this instruction is not in the provided method or if this snapshot does not
-     * have an instruction.
-     */
-    public FlowSnapshot successorState(FlowMethod method) {
-        return successorState(method, this.instruction);
-    }
-
-    /**
-     * Create a successor to this snapshot. The new snapshot will have the instruction after the specified instruction,
-     * as declared in the provided method.
-     *
-     * @param method the method.
-     * @param instruction the current instruction.
-     * @return a new snapshot, or {@code null} if this is the last instruction is the provided method.
-     * @throws IllegalArgumentException if this instruction is not in the provided method or if this snapshot does not
-     * have an instruction.
-     */
-    public FlowSnapshot successorState(FlowMethod method, Instruction instruction) {
-        if (instruction == null) {
-            throw new IllegalArgumentException("cannot find successor to this snapshot: snapshot does not refer to an instruction");
-        }
-        List<Instruction> instructions = method.getMethod().getInstructions();
-        int index = instructions.indexOf(instruction);
-        if (index < 0) {
-            throw new IllegalArgumentException("cannot find successor to this snapshot: instruction not found in method '" + method.getMethod().getName() + "'");
-        }
-        if (index + 1 >= instructions.size()) {
-            return null;
-        }
-        Instruction successor = instructions.get(index + 1);
-        return successorState(successor);
     }
 
     /**
@@ -142,7 +104,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot disconnectedState() {
-        return new FlowSnapshot(this.engine, this, null, null);
+        return new FlowSnapshot(this.flow, this, null, null);
     }
 
     /**

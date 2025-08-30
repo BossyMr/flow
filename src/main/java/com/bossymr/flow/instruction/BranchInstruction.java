@@ -1,15 +1,15 @@
 package com.bossymr.flow.instruction;
 
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.expression.UnaryExpression;
-import com.bossymr.flow.state.FlowEngine;
-import com.bossymr.flow.state.FlowMethod;
 import com.bossymr.flow.state.FlowSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Jump to a provided instruction depending on some criteria.
@@ -28,29 +28,33 @@ public final class BranchInstruction implements Instruction {
     }
 
     @Override
-    public List<FlowSnapshot> call(FlowEngine engine, FlowMethod method, FlowSnapshot snapshot) {
+    public List<FlowSnapshot> call(Flow.Method method, FlowSnapshot snapshot, Instruction successor) {
         return switch (kind) {
             case ALWAYS -> {
-                FlowSnapshot successor = snapshot.successorState(instruction);
-                yield List.of(successor);
+                FlowSnapshot successorState = snapshot.successorState(instruction);
+                yield List.of(successorState);
             }
             case CONDITIONALLY -> {
                 Expression condition = snapshot.pop();
                 Constraint constraint = ConstraintEngine.getConstraint(snapshot, condition);
                 List<FlowSnapshot> successors = new ArrayList<>();
                 if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_TRUE) {
-                    FlowSnapshot successor = snapshot.successorState();
-                    successor.require(condition);
-                    successors.add(successor.successorState(method));
+                    FlowSnapshot successorState = snapshot.successorState();
+                    successorState.require(condition);
+                    successors.add(successorState.successorState(instruction));
                 }
                 if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_FALSE) {
-                    FlowSnapshot successor = snapshot.successorState();
-                    successor.require(new UnaryExpression(UnaryOperator.NOT, condition));
-                    successors.add(successor.successorState(method));
+                    FlowSnapshot successorState = snapshot.successorState();
+                    successorState.require(new UnaryExpression(UnaryOperator.NOT, condition));
+                    successors.add(successorState.successorState(successor));
                 }
                 yield List.copyOf(successors);
             }
         };
+    }
+
+    public BranchKind getKind() {
+        return kind;
     }
 
     public Label getInstruction() {
@@ -59,6 +63,10 @@ public final class BranchInstruction implements Instruction {
 
     @Override
     public String toString() {
-        return "branch";
+        return switch (kind) {
+            case ALWAYS -> "jump(" + instruction + ")";
+            case CONDITIONALLY -> "branch(" +  instruction + ")";
+        };
     }
+
 }

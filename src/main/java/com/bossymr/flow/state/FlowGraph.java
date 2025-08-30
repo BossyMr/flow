@@ -1,12 +1,13 @@
 package com.bossymr.flow.state;
 
-import com.bossymr.flow.Method;
+import com.bossymr.flow.Flow;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.instruction.CallInstruction;
 import com.bossymr.flow.instruction.Instruction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class FlowGraph {
 
@@ -31,15 +32,12 @@ public class FlowGraph {
      */
     private final List<String> edges = new ArrayList<>();
 
-    private final FlowEngine engine;
-
     /**
      * A list of discovered methods. The index of a method in this list represents it's ID.
      */
-    private final List<Method> methods = new ArrayList<>();
+    private final List<Flow.Method> methods = new ArrayList<>();
 
-    public FlowGraph(FlowEngine engine) {
-        this.engine = engine;
+    public FlowGraph() {
         buffer.append("digraph {").append("\n");
         buffer.append("rankdir=LR;").append("\n");
     }
@@ -50,21 +48,8 @@ public class FlowGraph {
      * @param methods the methods.
      * @return this graph.
      */
-    public FlowGraph withMethods(Method... methods) {
-        for (Method method : methods) {
-            withMethod(method);
-        }
-        return this;
-    }
-
-    /**
-     * Adds the provided methods and all dependent methods to this graph.
-     *
-     * @param methods the methods.
-     * @return this graph.
-     */
-    public FlowGraph withMethods(FlowMethod... methods) {
-        for (FlowMethod method : methods) {
+    public FlowGraph withMethods(Flow.Method... methods) {
+        for (Flow.Method method : methods) {
             withMethod(method);
         }
         return this;
@@ -77,7 +62,7 @@ public class FlowGraph {
      * @param method the method.
      * @return this graph.
      */
-    public FlowGraph withMethod(Method method) {
+    public FlowGraph withMethod(Flow.Method method) {
         if (methods.contains(method)) {
             // We have already added this method to this graph.
             return this;
@@ -90,8 +75,7 @@ public class FlowGraph {
             buffer.append("{").append("\n");
             buffer.append("style=dotted;").append("\n");
             buffer.append("label=\"").append(method.getName()).append("\"").append("\n");
-            FlowMethod flowMethod = engine.getMethod(method);
-            List<FlowSnapshot> snapshots = new ArrayList<>(flowMethod.getExitPoints());
+            List<FlowSnapshot> snapshots = new ArrayList<>(method.getExitPoints());
             for (int currentSnapshot = 0; currentSnapshot < snapshots.size(); currentSnapshot++) {
                 FlowSnapshot snapshot = snapshots.get(currentSnapshot);
                 withSnapshot(snapshots, method, snapshot);
@@ -99,14 +83,14 @@ public class FlowGraph {
                 if (predecessor != null && !snapshots.contains(predecessor)) {
                     snapshots.add(predecessor);
                 }
-                if (snapshot.getInstruction() instanceof CallInstruction callInstruction) {
-                    Method callMethod = callInstruction.getMethod();
-                    if (!methods.contains(callMethod)) {
-                        methods.add(callMethod);
+                if (snapshot.getInstruction() instanceof CallInstruction instruction) {
+                    Flow.Method target = instruction.getMethod();
+                    if (!methods.contains(target)) {
+                        methods.add(target);
                     }
                     FlowSnapshot callSnapshot = snapshot.getWeakPredecessor();
                     if (callSnapshot != null) {
-                        withExternalEdge(snapshots, method, snapshot, callMethod, callSnapshot);
+                        withExternalEdge(snapshots, method, snapshot, target, callSnapshot);
                     }
                 }
                 if (predecessor != null) {
@@ -118,18 +102,7 @@ public class FlowGraph {
         return this;
     }
 
-    /**
-     * Adds the provided method and all dependent methods to this graph. This includes all methods that are called by
-     * this method.
-     *
-     * @param method the method.
-     * @return this graph.
-     */
-    public FlowGraph withMethod(FlowMethod method) {
-        return withMethod(method.getMethod());
-    }
-
-    private void withSnapshot(List<FlowSnapshot> snapshots, Method method, FlowSnapshot snapshot) {
+    private void withSnapshot(List<FlowSnapshot> snapshots, Flow.Method method, FlowSnapshot snapshot) {
         buffer.append("\"").append(getMethodIndex(method)).append("_").append(getSnapshotIndex(snapshots, snapshot)).append("\"");
         buffer.append("[shape=plain,label=<<table BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">");
         Instruction instruction = snapshot.getInstruction();
@@ -155,7 +128,7 @@ public class FlowGraph {
         buffer.append("</table>>];\n");
     }
 
-    private void withInternalEdge(List<FlowSnapshot> snapshots, Method method, FlowSnapshot fromSnapshot, FlowSnapshot toSnapshot) {
+    private void withInternalEdge(List<FlowSnapshot> snapshots, Flow.Method method, FlowSnapshot fromSnapshot, FlowSnapshot toSnapshot) {
         int methodIndex = getMethodIndex(method);
         buffer.append("\"").append(methodIndex).append("_").append(getSnapshotIndex(snapshots, fromSnapshot)).append("\"");
         buffer.append(" -> ");
@@ -163,7 +136,7 @@ public class FlowGraph {
         buffer.append(";\n");
     }
 
-    private void withExternalEdge(List<FlowSnapshot> snapshots, Method fromMethod, FlowSnapshot fromSnapshot, Method toMethod, FlowSnapshot toSnapshot) {
+    private void withExternalEdge(List<FlowSnapshot> snapshots, Flow.Method fromMethod, FlowSnapshot fromSnapshot, Flow.Method toMethod, FlowSnapshot toSnapshot) {
         edges.add("\"" + getMethodIndex(fromMethod) + "_" + getSnapshotIndex(snapshots, fromSnapshot) + "\"" + " -> " +
                 "\"" + getMethodIndex(toMethod) + "_" + getExternalSnapshotIndex(toMethod, toSnapshot) + "\"" +
                 "[style=dotted]" + ";" + "\n");
@@ -186,7 +159,7 @@ public class FlowGraph {
      * @param method the method.
      * @return the ID of the specified method.
      */
-    private int getMethodIndex(Method method) {
+    private int getMethodIndex(Flow.Method method) {
         int index = methods.indexOf(method);
         if (index >= 0) {
             return index;
@@ -218,9 +191,8 @@ public class FlowGraph {
      * @return the ID of the specified snapshot.
      * @throws IllegalArgumentException if the specified snapshot is not an exit point of the provided method.
      */
-    private int getExternalSnapshotIndex(Method method, FlowSnapshot exitPoint) {
-        FlowMethod flowMethod = engine.getMethod(method);
-        List<FlowSnapshot> exitPoints = flowMethod.getExitPoints();
+    private int getExternalSnapshotIndex(Flow.Method method, FlowSnapshot exitPoint) {
+        List<FlowSnapshot> exitPoints = method.getExitPoints();
         // We start by visiting the exit points of a method.
         // As a result, we know the index of the snapshot without having to store a list of snapshots for every method.
         return exitPoints.indexOf(exitPoint);

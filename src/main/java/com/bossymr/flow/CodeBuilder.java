@@ -12,11 +12,11 @@ import java.util.function.Consumer;
 
 public class CodeBuilder {
 
-    private final Method method;
+    private final Flow.Method method;
     private final List<ValueType> stack;
     private final List<Instruction> instructions = new ArrayList<>();
 
-    public CodeBuilder(Method method, List<ValueType> stack) {
+    public CodeBuilder(Flow.Method method, List<ValueType> stack) {
         this.method = method;
         this.stack = stack;
     }
@@ -57,18 +57,20 @@ public class CodeBuilder {
         return this;
     }
 
-    public CodeBuilder conditionalJump(Label thenLabel) {
-        return branch(BranchKind.CONDITIONALLY, thenLabel);
+    public void conditionalJump(Label thenLabel) {
+        branch(BranchKind.CONDITIONALLY, thenLabel);
     }
 
-    public CodeBuilder jump(Label label) {
-        return branch(BranchKind.ALWAYS, label);
+    public void jump(Label label) {
+        branch(BranchKind.ALWAYS, label);
     }
 
-    public CodeBuilder call(Method method) {
-        validateStack(method.getArguments().size(), List.of(new InstructionKind(method.getReturnType(), method.getArguments())));
-        if (!(method.getReturnType() instanceof EmptyType)) {
-            stack.add(method.getReturnType());
+    public CodeBuilder call(Flow.Method method) {
+        ValueType returnType = method.getSignature().returnType();
+        List<ValueType> arguments = method.getSignature().arguments();
+        validateStack(method.getArguments().size(), List.of(new InstructionKind(returnType, arguments)));
+        if (!(returnType instanceof EmptyType)) {
+            stack.add(returnType);
         }
         instructions.add(new CallInstruction(method));
         return this;
@@ -265,12 +267,12 @@ public class CodeBuilder {
 
     public CodeBuilder assign(Variable variable) {
         validateStack(1, List.of(new InstructionKind(null, variable.getType())));
-        instructions.add(new AssignInstruction(variable));
+        instructions.add(new StoreInstruction(variable));
         return this;
     }
 
     public void returnValue() {
-        if (!(method.getReturnType() instanceof EmptyType)) {
+        if (!(method.getSignature().returnType() instanceof EmptyType)) {
             validateStackLength(1);
             stack.removeLast();
         }

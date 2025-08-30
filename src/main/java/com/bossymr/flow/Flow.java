@@ -1,0 +1,212 @@
+package com.bossymr.flow;
+
+import com.bossymr.flow.expression.Expression;
+import com.bossymr.flow.expression.Variable;
+import com.bossymr.flow.instruction.Instruction;
+import com.bossymr.flow.state.FlowSnapshot;
+import com.bossymr.flow.type.ValueType;
+
+import java.util.*;
+import java.util.function.Consumer;
+
+/**
+ * A data flow analyzer.
+ */
+public class Flow {
+
+    /**
+     * Create a new method.
+     *
+     * @param name the method's name.
+     * @param signature the method's signature.
+     * @param code the method's code body.
+     * @return a new method.
+     */
+    public Method createMethod(String name, Signature signature, Consumer<CodeBuilder> code) {
+        return new Method(name, signature, code);
+    }
+
+    /**
+     * A method.
+     * <p>
+     * A method is type checked to assert correctness during data flow analysis. Trying to create an invalid method will
+     * throw an exception, as such, it is up to the user to validate any code before it is passed to the analyzer. For
+     * example, casting objects from one type to another is not supported natively, and needs to be implemented in the
+     * code passed to the method.
+     */
+    public class Method {
+
+        private final String name;
+        private final Signature signature;
+        private final List<Instruction> instructions;
+
+        private final FlowSnapshot entryPoint;
+        private final List<FlowSnapshot> exitPoints = new ArrayList<>();
+        private final List<Expression> arguments;
+
+        private Method(String name, Signature signature, Consumer<CodeBuilder> code) {
+            this.name = name;
+            this.signature = signature;
+            CodeBuilder codeBuilder = new CodeBuilder(this, new ArrayList<>(signature.arguments()));
+            code.accept(codeBuilder);
+            List<Instruction> block = codeBuilder.getInstructions();
+            this.instructions = List.copyOf(block);
+            // We need the entry point to be before the first instruction in the method.
+            // This is so that we can call #beforeInstruction(...) on the first instruction.
+            this.entryPoint = FlowSnapshot.emptyState(Flow.this);
+            this.arguments = new ArrayList<>();
+            for (int i = 0; i < signature.arguments().size(); i++) {
+                ValueType argument = signature.arguments().get(i);
+                Variable variable = new Variable("Argument #" + i, argument);
+                this.arguments.add(variable);
+                this.entryPoint.push(variable);
+            }
+            compute();
+        }
+
+        private void compute() {
+            Deque<FlowSnapshot> queue = new ArrayDeque<>();
+            Instruction firstInstruction = instructions.getFirst();
+            if (firstInstruction != null) {
+                queue.addFirst(entryPoint.successorState(firstInstruction));
+            }
+            while (!queue.isEmpty()) {
+                FlowSnapshot snapshot = queue.pop();
+                Instruction instruction = snapshot.getInstruction();
+                int index = getInstructions().indexOf(instruction);
+                if (index < 0) {
+                    throw new IllegalStateException("memory state belongs to instruction from other method");
+                }
+                Instruction successor;
+                if (index + 1 >= instructions.size()) {
+                    successor = null;
+                } else {
+                    successor = instructions.get(index + 1);
+                }
+                List<FlowSnapshot> successors = instruction.call(this, snapshot, successor);
+                for (FlowSnapshot successorState : successors.reversed()) {
+                    queue.addFirst(successorState);
+                }
+            }
+        }
+
+        public Flow getFlow() {
+            return Flow.this;
+        }
+
+        /**
+         * {@return the method's name}
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * {@return the method's signature}
+         */
+        public Signature getSignature() {
+            return signature;
+        }
+
+        /**
+         * {@return the method's instructions}
+         */
+        public List<Instruction> getInstructions() {
+            return instructions;
+        }
+
+        /**
+         * Returns the expressions used to reference this method's arguments.
+         *
+         * @return a list of expressions
+         */
+        public List<Expression> getArguments() {
+            return arguments;
+        }
+
+        /**
+         * A snapshot made at the start of this method before any instruction is called.
+         *
+         * @return a snapshot of the program
+         */
+        public FlowSnapshot getEntryPoint() {
+            return entryPoint;
+        }
+
+        /**
+         * All possible snapshots made at the exit points of this method.
+         *
+         * @return a list of all possible snapshots
+         */
+        public List<FlowSnapshot> getExitPoints() {
+            return exitPoints;
+        }
+
+        /**
+         * All possible snapshots made at the exit points of this method if this method was called by the provided
+         * snapshot. All arguments to this method are popped from the stack of the provided snapshot in the order they
+         * are declared.
+         *
+         * @param caller a snapshot of the program calling this method.
+         * @return a list of all possible snapshots
+         */
+        public List<FlowSnapshot> getExitPoints(FlowSnapshot caller) {
+            // TODO
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * All possible snapshots made before the provided instruction.
+         *
+         * @param instruction the instruction
+         * @return a list of all possible snapshots
+         */
+        public List<FlowSnapshot> beforeInstruction(Instruction instruction) {
+            Deque<FlowSnapshot> queue = new ArrayDeque<>();
+            queue.add(entryPoint);
+            List<FlowSnapshot> states = new ArrayList<>();
+            while (!queue.isEmpty()) {
+                // Search all snapshots for snapshots belonging to the specified instruction.
+                // If an instruction belongs to the specified instruction, add its predecessor to the list.
+                // We need to search until we reach the end of the method, since an instruction might be encountered
+                // than once.
+                FlowSnapshot snapshot = queue.pop();
+                if (instruction.equals(snapshot.getInstruction())) {
+                    states.add(snapshot.getPredecessor());
+                }
+                queue.addAll(snapshot.getSuccessors());
+            }
+            return states;
+        }
+
+        /**
+         * All possible snapshots made after the provided instruction.
+         *
+         * @param instruction the instruction
+         * @return a list of all possible snapshots
+         */
+        public List<FlowSnapshot> afterInstruction(Instruction instruction) {
+            Deque<FlowSnapshot> queue = new ArrayDeque<>();
+            queue.add(entryPoint);
+            List<FlowSnapshot> states = new ArrayList<>();
+            while (!queue.isEmpty()) {
+                // Search all snapshots for snapshots where it's predecessor belongs to the specified instruction, but not
+                // the instruction itself.
+                FlowSnapshot snapshot = queue.pop();
+                if (!instruction.equals(snapshot.getInstruction())) {
+                    FlowSnapshot predecessor = snapshot.getPredecessor();
+                    if (predecessor != null && instruction.equals(predecessor.getInstruction())) {
+                        states.add(snapshot);
+                    }
+                }
+                queue.addAll(snapshot.getSuccessors());
+            }
+            return states;
+        }
+
+        @Override
+        public String toString() {
+            return name + signature;
+        }
+    }
+}
