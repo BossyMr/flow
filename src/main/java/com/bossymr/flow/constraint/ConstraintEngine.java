@@ -1,11 +1,8 @@
 package com.bossymr.flow.constraint;
 
-import com.bossymr.flow.expression.BinaryExpression;
-import com.bossymr.flow.expression.Expression;
-import com.bossymr.flow.expression.LiteralExpression;
-import com.bossymr.flow.expression.UnaryExpression;
+import com.bossymr.flow.Flow;
+import com.bossymr.flow.expression.*;
 import com.bossymr.flow.state.FlowSnapshot;
-import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.type.*;
 import io.github.cvc5.*;
 
@@ -13,18 +10,23 @@ import java.util.*;
 
 public class ConstraintEngine {
 
+    private final Flow flow;
     private final TermManager manager = new TermManager();
     private final Solver solver = new Solver(manager);
 
-    private final Map<Variable, Term> variables = new HashMap<>();
     private final Map<ValueType, Sort> types = new HashMap<>();
 
+    private final List<Term> assertions = new ArrayList<>();
+
+    private final Map<Expression, Term> cache = new WeakHashMap<>();
+
     public ConstraintEngine(FlowSnapshot snapshot) throws CVC5ApiException {
+        this.flow = snapshot.getFlow();
         solver.setLogic("ALL");
         for (FlowSnapshot state : getSnapshotBranch(snapshot)) {
             for (Expression constraint : state.getConstraints()) {
                 Term expression = getTerm(constraint);
-                solver.assertFormula(expression);
+                assertFormula(expression);
             }
         }
     }
@@ -64,7 +66,7 @@ public class ConstraintEngine {
     }
 
     public Reachable isReachable() {
-        Result result = solver.checkSat();
+        Result result = checkSat();
         if (result.isSat()) {
             return Reachable.REACHABLE;
         }
@@ -77,14 +79,14 @@ public class ConstraintEngine {
     public Constraint getConstraint(Expression predicate) throws CVC5ApiException {
         Term expression = getTerm(predicate);
         solver.push();
-        solver.assertFormula(manager.mkTerm(manager.mkOp(Kind.EQUAL), expression, manager.mkBoolean(true)));
-        Result maybeTrue = solver.checkSat();
+        assertFormula(manager.mkTerm(manager.mkOp(Kind.EQUAL), expression, manager.mkBoolean(true)));
+        Result maybeTrue = checkSat();
         if (maybeTrue.isUnknown()) {
             return Constraint.UNKNOWN;
         }
         solver.pop();
-        solver.assertFormula(manager.mkTerm(manager.mkOp(Kind.EQUAL), expression, manager.mkBoolean(false)));
-        Result maybeFalse = solver.checkSat();
+        assertFormula(manager.mkTerm(manager.mkOp(Kind.EQUAL), expression, manager.mkBoolean(false)));
+        Result maybeFalse = checkSat();
         if (maybeFalse.isUnknown()) {
             return Constraint.UNKNOWN;
         }
@@ -97,7 +99,22 @@ public class ConstraintEngine {
         if (maybeFalse.isSat()) {
             return Constraint.ALWAYS_FALSE;
         }
+        System.out.println("Assertions causing NO_VALUE:");
+        for (Term assertion : assertions) {
+            System.out.println(assertion);
+        }
         return Constraint.NO_VALUE;
+    }
+
+    private void assertFormula(Term term) {
+        flow.getStatistics().get(Flow.Statistic.SatisfiabilityAssertions).increment();
+        assertions.add(term);
+        solver.assertFormula(term);
+    }
+
+    private Result checkSat() {
+        flow.getStatistics().get(Flow.Statistic.SatisfiabilityQueries).increment();
+        return solver.checkSat();
     }
 
     /**
@@ -116,7 +133,10 @@ public class ConstraintEngine {
     }
 
     private Term getTerm(Expression expression) throws CVC5ApiException {
-        return switch (expression) {
+        if (cache.containsKey(expression)) {
+            return cache.get(expression);
+        }
+        Term term = switch (expression) {
             case UnaryExpression unary -> {
                 Term component = getTerm(unary.getExpression());
                 Op operator = switch (unary.getOperator()) {
@@ -153,16 +173,10 @@ public class ConstraintEngine {
                 case RealType.Fraction(long numerator, long denominator) -> manager.mkReal(numerator, denominator);
                 default -> throw new IllegalStateException();
             };
-            case Variable variable -> {
-                if (variables.containsKey(variable)) {
-                    yield variables.get(variable);
-                }
-                Term term = manager.mkConst(getSort(variable.getType()));
-                variables.put(variable, term);
-                yield term;
-            }
-            default -> throw new IllegalStateException();
+            case AnyExpression anyExpression -> manager.mkConst(getSort(anyExpression.getType()));
         };
+        cache.put(expression, term);
+        return term;
     }
 
     private Sort getSort(ValueType type) throws CVC5ApiException {

@@ -1,18 +1,28 @@
 package com.bossymr.flow;
 
+import com.bossymr.flow.expression.AnyExpression;
 import com.bossymr.flow.expression.Expression;
-import com.bossymr.flow.expression.Variable;
 import com.bossymr.flow.instruction.Instruction;
 import com.bossymr.flow.state.FlowSnapshot;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.*;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
 /**
  * A data flow analyzer.
  */
 public class Flow {
+
+    private final EnumMap<Statistic, LongAdder> statistics;
+
+    public Flow() {
+        this.statistics = new EnumMap<>(Statistic.class);
+        for (Statistic statistic : Statistic.values()) {
+            statistics.put(statistic, new LongAdder());
+        }
+    }
 
     /**
      * Create a new method.
@@ -24,6 +34,13 @@ public class Flow {
      */
     public Method createMethod(String name, Signature signature, Consumer<CodeBuilder> code) {
         return new Method(name, signature, code);
+    }
+
+    /**
+     * {@return the statistics kept by this data flow analyzer}
+     */
+    public EnumMap<Statistic, LongAdder> getStatistics() {
+        return statistics;
     }
 
     /**
@@ -47,17 +64,17 @@ public class Flow {
         private Method(String name, Signature signature, Consumer<CodeBuilder> code) {
             this.name = name;
             this.signature = signature;
-            CodeBuilder codeBuilder = new CodeBuilder(this, new ArrayList<>(signature.arguments()));
+            this.instructions = new ArrayList<>();
+            CodeBuilder codeBuilder = new CodeBuilder(this);
             code.accept(codeBuilder);
             List<Instruction> block = codeBuilder.getInstructions();
-            this.instructions = List.copyOf(block);
             // We need the entry point to be before the first instruction in the method.
             // This is so that we can call #beforeInstruction(...) on the first instruction.
             this.entryPoint = FlowSnapshot.emptyState(Flow.this);
             this.arguments = new ArrayList<>();
             for (int i = 0; i < signature.arguments().size(); i++) {
                 ValueType argument = signature.arguments().get(i);
-                Variable variable = new Variable("Argument #" + i, argument);
+                Expression variable = new AnyExpression(argument);
                 this.arguments.add(variable);
                 this.entryPoint.push(variable);
             }
@@ -73,7 +90,7 @@ public class Flow {
             while (!queue.isEmpty()) {
                 FlowSnapshot snapshot = queue.pop();
                 Instruction instruction = snapshot.getInstruction();
-                int index = getInstructions().indexOf(instruction);
+                int index = instructions.indexOf(instruction);
                 if (index < 0) {
                     throw new IllegalStateException("memory state belongs to instruction from other method");
                 }
@@ -208,5 +225,22 @@ public class Flow {
         public String toString() {
             return name + signature;
         }
+    }
+
+    public enum Statistic {
+        /**
+         * How many times the solver was asked whether a set of assertions was satisfiable.
+         */
+        SatisfiabilityQueries,
+
+        /**
+         * How many times the solver was given an assertion.
+         */
+        SatisfiabilityAssertions,
+
+        /**
+         * How many times a snapshot was created.
+         */
+        Snapshots,
     }
 }

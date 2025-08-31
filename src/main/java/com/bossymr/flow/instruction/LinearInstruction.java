@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * An instruction that will not change the next instruction.
  */
-public sealed interface LinearInstruction extends Instruction permits UnaryInstruction, BinaryInstruction, DuplicateInstruction, LoadInstruction, StoreInstruction, PushInstruction {
+public sealed interface LinearInstruction extends Instruction permits AssertInstruction, BinaryInstruction, DuplicateInstruction, LoadInstruction, PushInstruction, StoreInstruction, UnaryInstruction {
 
     /**
      * Performs this instruction on the provided memory state.

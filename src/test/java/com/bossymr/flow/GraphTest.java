@@ -27,6 +27,7 @@ class GraphTest {
         String text = new FlowGraph()
                 .withMethod(foo)
                 .getText();
+        System.out.println(flow.getStatistics());
         System.out.println(text);
     }
 }

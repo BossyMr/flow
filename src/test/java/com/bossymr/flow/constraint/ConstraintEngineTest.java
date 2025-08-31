@@ -22,6 +22,7 @@ class ConstraintEngineTest {
         snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(1)));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.NOT_REACHABLE, reachable);
+        System.out.println(flow.getStatistics());
     }
 
     @DisplayName("Assert 0 == 0")
@@ -32,6 +33,7 @@ class ConstraintEngineTest {
         snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), LiteralExpression.integerLiteral(0)));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
+        System.out.println(flow.getStatistics());
     }
 
     @DisplayName("Assert 0 == {real to int} 0")
@@ -42,5 +44,6 @@ class ConstraintEngineTest {
         snapshot.require(new BinaryExpression(BinaryOperator.EQUAL_TO, LiteralExpression.integerLiteral(0), new UnaryExpression(UnaryOperator.REAL_TO_INTEGER, LiteralExpression.numericLiteral(0))));
         Reachable reachable = ConstraintEngine.isReachable(snapshot);
         assertEquals(Reachable.REACHABLE, reachable);
+        System.out.println(flow.getStatistics());
     }
 }
