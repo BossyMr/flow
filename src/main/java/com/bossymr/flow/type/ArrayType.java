@@ -1,5 +1,8 @@
 package com.bossymr.flow.type;
 
+import io.github.cvc5.Sort;
+import io.github.cvc5.TermManager;
+
 import java.util.Objects;
 
 /**
@@ -8,6 +11,8 @@ import java.util.Objects;
 public final class ArrayType implements ValueType {
 
     private final ValueType elementType;
+
+    private Sort sort;
 
     /**
      * Create a new {@code ArrayType}.
@@ -33,6 +38,15 @@ public final class ArrayType implements ValueType {
     @Override
     public boolean isArray() {
         return true;
+    }
+
+    @Override
+    public Sort getSort(TermManager manager) {
+        if (sort != null) {
+            return sort;
+        }
+        Sort integerSort = ValueType.integerType().getSort(manager);
+        return sort = manager.mkArraySort(integerSort, elementType.getSort(manager));
     }
 
     @Override

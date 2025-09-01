@@ -2,7 +2,6 @@ package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.Flow;
 import com.bossymr.flow.constraint.Constraint;
-import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.state.FlowSnapshot;
 
@@ -26,7 +25,7 @@ public final class AssertInstruction implements LinearInstruction {
     @Override
     public void perform(Flow.Method method, FlowSnapshot snapshot) {
         Expression expression = snapshot.pop();
-        Constraint constraint = ConstraintEngine.getConstraint(snapshot, expression);
+        Constraint constraint = snapshot.compute(expression);
         if (expected == Constraint.ALWAYS_TRUE || expected == Constraint.ALWAYS_FALSE) {
             // If we expect a certain value, the actual value needs to be that exact value.
             if (constraint != this.expected) {

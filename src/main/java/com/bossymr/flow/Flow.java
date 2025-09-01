@@ -1,5 +1,6 @@
 package com.bossymr.flow;
 
+import com.bossymr.flow.constraint.FlowSolver;
 import com.bossymr.flow.expression.AnyExpression;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.instruction.Instruction;
@@ -15,9 +16,12 @@ import java.util.function.Consumer;
  */
 public class Flow {
 
+    private final FlowSolver solver;
+
     private final EnumMap<Statistic, LongAdder> statistics;
 
     public Flow() {
+        this.solver = new FlowSolver(this);
         this.statistics = new EnumMap<>(Statistic.class);
         for (Statistic statistic : Statistic.values()) {
             statistics.put(statistic, new LongAdder());
@@ -36,11 +40,42 @@ public class Flow {
         return new Method(name, signature, code);
     }
 
+    public FlowSolver getSolver() {
+        return solver;
+    }
+
     /**
      * {@return the statistics kept by this data flow analyzer}
      */
     public EnumMap<Statistic, LongAdder> getStatistics() {
         return statistics;
+    }
+
+    public enum Statistic {
+        /**
+         * How many times the solver was asked whether a set of assertions was satisfiable.
+         */
+        SatisfiabilityQueries,
+
+        /**
+         * How many times the solver was given an assertion.
+         */
+        SatisfiabilityAssertions,
+
+        /**
+         * How many times a layer was added to the solver.
+         */
+        SatisfiabilityPush,
+
+        /**
+         * How many times a layer was removed from the solver.
+         */
+        SatisfiabilityPop,
+
+        /**
+         * How many times a snapshot was created.
+         */
+        Snapshots,
     }
 
     /**
@@ -67,7 +102,6 @@ public class Flow {
             this.instructions = new ArrayList<>();
             CodeBuilder codeBuilder = new CodeBuilder(this);
             code.accept(codeBuilder);
-            List<Instruction> block = codeBuilder.getInstructions();
             // We need the entry point to be before the first instruction in the method.
             // This is so that we can call #beforeInstruction(...) on the first instruction.
             this.entryPoint = FlowSnapshot.emptyState(Flow.this);
@@ -76,7 +110,7 @@ public class Flow {
                 ValueType argument = signature.arguments().get(i);
                 Expression variable = new AnyExpression(argument);
                 this.arguments.add(variable);
-                this.entryPoint.push(variable);
+                this.entryPoint.store(i, variable);
             }
             compute();
         }
@@ -225,22 +259,5 @@ public class Flow {
         public String toString() {
             return name + signature;
         }
-    }
-
-    public enum Statistic {
-        /**
-         * How many times the solver was asked whether a set of assertions was satisfiable.
-         */
-        SatisfiabilityQueries,
-
-        /**
-         * How many times the solver was given an assertion.
-         */
-        SatisfiabilityAssertions,
-
-        /**
-         * How many times a snapshot was created.
-         */
-        Snapshots,
     }
 }

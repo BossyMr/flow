@@ -1,6 +1,8 @@
 package com.bossymr.flow.expression;
 
 import com.bossymr.flow.type.ValueType;
+import io.github.cvc5.Term;
+import io.github.cvc5.TermManager;
 
 import java.util.function.Function;
 
@@ -25,4 +27,6 @@ public sealed interface Expression permits AnyExpression, BinaryExpression, Lite
      * @return either this expression or a new expression.
      */
     Expression translate(Function<Expression, Expression> mapper);
+
+    Term convert(TermManager manager);
 }

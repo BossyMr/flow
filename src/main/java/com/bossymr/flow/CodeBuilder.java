@@ -6,6 +6,7 @@ import com.bossymr.flow.type.EmptyType;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -47,7 +48,7 @@ public class CodeBuilder {
     /**
      * {@return a new unbound label}
      */
-    public Label newlabel() {
+    public Label newLabel() {
         return new Label();
     }
 
@@ -165,7 +166,7 @@ public class CodeBuilder {
      * @return this builder
      */
     public CodeBuilder ifThen(Consumer<CodeBuilder> thenHandler) {
-        Label elseLabel = newlabel();
+        Label elseLabel = newLabel();
         not().conditionalJump(elseLabel);
         CodeBuilder thenCodeBuilder = new CodeBuilder(this);
         thenHandler.accept(thenCodeBuilder);
@@ -181,8 +182,8 @@ public class CodeBuilder {
      * @return this builder
      */
     public CodeBuilder ifThenElse(Consumer<CodeBuilder> thenHandler, Consumer<CodeBuilder> elseHandler) {
-        Label thenLabel = newlabel();
-        Label afterLabel = newlabel();
+        Label thenLabel = newLabel();
+        Label afterLabel = newLabel();
         conditionalJump(thenLabel);
         CodeBuilder elseCodeBuilder = new CodeBuilder(this);
         elseHandler.accept(elseCodeBuilder);
@@ -193,6 +194,23 @@ public class CodeBuilder {
         insertLabel(afterLabel);
         stack.clear();
         stack.addAll(thenCodeBuilder.getStack());
+        return this;
+    }
+
+    /**
+     * Adds a loop block.
+     *
+     * @param loopHandler the handler used to generate the body of the loop and a label to break out of the loop
+     * @return this builder
+     */
+    public CodeBuilder loop(BiConsumer<Label, CodeBuilder> loopHandler) {
+        Label breakLabel = newLabel();
+        Label startLabel = newBoundLabel();
+        CodeBuilder codeBuilder = new CodeBuilder(this);
+        loopHandler.accept(breakLabel, codeBuilder);
+        jump(startLabel);
+        insertLabel(breakLabel);
+        // TODO: The stack at this point should be the same as where we jump to the breakLabel
         return this;
     }
 
@@ -339,20 +357,16 @@ public class CodeBuilder {
         return this;
     }
 
-    public CodeBuilder realToInteger() {
-        return unary(UnaryOperator.REAL_TO_INTEGER);
-    }
-
-    public CodeBuilder integerToReal() {
-        return unary(UnaryOperator.INTEGER_TO_REAL);
+    public CodeBuilder convert(ValueType fromType, ValueType toType) {
+        return unary(new UnaryOperator.Convert(fromType, toType));
     }
 
     public CodeBuilder not() {
-        return unary(UnaryOperator.NOT);
+        return unary(new UnaryOperator.Not());
     }
 
     public CodeBuilder negate() {
-        return unary(UnaryOperator.NEGATE);
+        return unary(new UnaryOperator.Negate());
     }
 
     public CodeBuilder load(int variable) {

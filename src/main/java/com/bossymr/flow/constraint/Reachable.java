@@ -1,7 +1,7 @@
 package com.bossymr.flow.constraint;
 
 /**
- * Indicates whether an instruction is reachable.
+ * Whether an instruction is reachable.
  */
 public enum Reachable {
     /**
@@ -15,7 +15,7 @@ public enum Reachable {
     NOT_REACHABLE,
 
     /**
-     * It isn't possible to determine whether this instruction is reachable.
+     * The instruction might be reachable, but we can't determine definitively.
      */
     UNKNOWN
 }

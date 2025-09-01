@@ -13,6 +13,7 @@ class BranchTest {
     void conditionInIfStatement() {
         Flow flow = new Flow();
         flow.createMethod("foo", new Signature(ValueType.emptyType(), ValueType.booleanType()), codeBuilder -> codeBuilder
+                .load(0)
                 .duplicate()
                 .ifThenElse(thenBuilder -> thenBuilder.debugAssert(),
                         elseBuilder -> elseBuilder.not().debugAssert())
@@ -50,6 +51,7 @@ class BranchTest {
     void mergeDiffAfterIfStatement() {
         Flow flow = new Flow();
         flow.createMethod("foo", new Signature(ValueType.emptyType(), ValueType.booleanType()), codeBuilder -> codeBuilder
+                .load(0)
                 .ifThenElse(thenBuilder -> thenBuilder.pushBoolean(true),
                         elseBuilder -> elseBuilder.pushBoolean(false))
                 .debugAssert(Constraint.ANY_VALUE)

@@ -2,14 +2,12 @@ package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.Flow;
 import com.bossymr.flow.constraint.Constraint;
-import com.bossymr.flow.constraint.ConstraintEngine;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.expression.UnaryExpression;
 import com.bossymr.flow.state.FlowSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Jump to a provided instruction depending on some criteria.
@@ -36,7 +34,7 @@ public final class BranchInstruction implements Instruction {
             }
             case CONDITIONALLY -> {
                 Expression condition = snapshot.pop();
-                Constraint constraint = ConstraintEngine.getConstraint(snapshot, condition);
+                Constraint constraint = snapshot.compute(condition);
                 List<FlowSnapshot> successors = new ArrayList<>();
                 if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_TRUE) {
                     FlowSnapshot successorState = snapshot.successorState();
@@ -45,7 +43,7 @@ public final class BranchInstruction implements Instruction {
                 }
                 if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_FALSE) {
                     FlowSnapshot successorState = snapshot.successorState();
-                    successorState.require(new UnaryExpression(UnaryOperator.NOT, condition));
+                    successorState.require(new UnaryExpression(new UnaryOperator.Not(), condition));
                     successors.add(successorState.successorState(successor));
                 }
                 yield List.copyOf(successors);

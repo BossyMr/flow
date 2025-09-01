@@ -2,6 +2,8 @@ package com.bossymr.flow.expression;
 
 import com.bossymr.flow.Constant;
 import com.bossymr.flow.type.ValueType;
+import io.github.cvc5.Term;
+import io.github.cvc5.TermManager;
 
 import java.util.function.Function;
 
@@ -11,6 +13,8 @@ import java.util.function.Function;
 public final class LiteralExpression implements Expression {
 
     private final Constant<?> constant;
+
+    private Term term;
 
     public LiteralExpression(Constant<?> constant) {
         this.constant = constant;
@@ -84,6 +88,14 @@ public final class LiteralExpression implements Expression {
      */
     public Object getValue() {
         return constant.getValue();
+    }
+
+    @Override
+    public Term convert(TermManager manager) {
+        if (term != null) {
+            return term;
+        }
+        return term = constant.convert(manager);
     }
 
     @Override

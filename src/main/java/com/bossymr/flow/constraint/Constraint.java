@@ -1,31 +1,42 @@
 package com.bossymr.flow.constraint;
 
 /**
- * Indicates the possible values of a boolean expression.
+ * The possible values of a boolean expression.
  */
 public enum Constraint {
     /**
-     * The expression can be equal to either {@code true} or {@code false}.
+     * The expression is either {@code true} or {@code false}.
      */
     ANY_VALUE,
 
     /**
-     * The expression will only ever be equal to {@code false}.
+     * The expression is always {@code false}.
      */
     ALWAYS_FALSE,
 
     /**
-     * The expression will only ever be equal to {@code true}.
+     * The expression is always {@code true}.
      */
     ALWAYS_TRUE,
 
     /**
      * The expression is not reachable.
+     * <p>
+     * This will be returned if you try to determine the value of an expression where it can't be either {@code true} or
+     * {@code false}.
+     *
+     * <pre>{@code
+     *  if (variable && !variable) {
+     *      // variable is NO_VALUE
+     *  }
+     * }</pre>
      */
     NO_VALUE,
 
     /**
-     * It isn't possible to determine the possible values of the expression.
+     * The expression can have any value.
+     * <p>
+     * As opposed to {@link Constraint#ANY_VALUE}, the value of the expression couldn't be determined.
      */
     UNKNOWN,
 }

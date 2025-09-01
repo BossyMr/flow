@@ -3,12 +3,8 @@ package com.bossymr.flow.instruction;
 import com.bossymr.flow.Flow;
 import com.bossymr.flow.state.FlowSnapshot;
 
-import java.util.List;
-
 /**
  * Duplicates the value at the top of the stack.
- * <p>
- * {@code [any] -> [any] [any]}
  */
 public final class DuplicateInstruction implements LinearInstruction {
 

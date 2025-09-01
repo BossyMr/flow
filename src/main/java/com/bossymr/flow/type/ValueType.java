@@ -1,5 +1,8 @@
 package com.bossymr.flow.type;
 
+import io.github.cvc5.Sort;
+import io.github.cvc5.TermManager;
+
 /**
  * A {@code ValueType} represents the type of an expression or value.
  */
@@ -37,7 +40,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      *
      * @return a numeric type.
      */
-    static ValueType numericType() {
+    static ValueType realType() {
         return new RealType();
     }
 
@@ -81,4 +84,6 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
     default ArrayType createArrayType() {
         return new ArrayType(this);
     }
+
+    Sort getSort(TermManager manager);
 }

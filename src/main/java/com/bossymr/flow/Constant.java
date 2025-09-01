@@ -1,10 +1,15 @@
 package com.bossymr.flow;
 
-import com.bossymr.flow.type.*;
+import com.bossymr.flow.type.RealType;
+import com.bossymr.flow.type.ValueType;
+import io.github.cvc5.Term;
+import io.github.cvc5.TermManager;
 
 import java.util.Objects;
 
 public sealed interface Constant<T> {
+
+    Term convert(TermManager manager);
 
     final class Boolean implements Constant<java.lang.Boolean> {
 
@@ -21,6 +26,11 @@ public sealed interface Constant<T> {
         @Override
         public ValueType getType() {
             return ValueType.booleanType();
+        }
+
+        @Override
+        public Term convert(TermManager manager) {
+            return manager.mkBoolean(value);
         }
 
         @Override
@@ -56,6 +66,11 @@ public sealed interface Constant<T> {
         @Override
         public ValueType getType() {
             return ValueType.integerType();
+        }
+
+        @Override
+        public Term convert(TermManager manager) {
+            return manager.mkInteger(value);
         }
 
         @Override
@@ -98,7 +113,12 @@ public sealed interface Constant<T> {
 
         @Override
         public ValueType getType() {
-            return ValueType.numericType();
+            return ValueType.realType();
+        }
+
+        @Override
+        public Term convert(TermManager manager) {
+            return manager.mkReal(value.numerator(), value.denominator());
         }
 
         @Override
@@ -119,6 +139,10 @@ public sealed interface Constant<T> {
         }
     }
 
+    T getValue();
+
+    ValueType getType();
+
     final class String implements Constant<java.lang.String> {
 
         private final java.lang.String value;
@@ -134,6 +158,11 @@ public sealed interface Constant<T> {
         @Override
         public ValueType getType() {
             return ValueType.stringType();
+        }
+
+        @Override
+        public Term convert(TermManager manager) {
+            return manager.mkString(value);
         }
 
         @Override
@@ -153,8 +182,4 @@ public sealed interface Constant<T> {
             return "\"" + value + "\"";
         }
     }
-
-    T getValue();
-
-    ValueType getType();
 }

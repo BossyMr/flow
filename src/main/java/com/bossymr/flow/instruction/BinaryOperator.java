@@ -1,8 +1,9 @@
 package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.type.*;
-
-import java.util.List;
+import io.github.cvc5.Kind;
+import io.github.cvc5.Op;
+import io.github.cvc5.TermManager;
 
 /**
  * An {@code Operator} represents a binary operator.
@@ -13,6 +14,11 @@ public enum BinaryOperator {
         public ValueType getType(ValueType left, ValueType right) {
             return ValueType.booleanType();
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.EQUAL);
+        }
     },
     GREATER_THAN(">") {
         @Override
@@ -22,6 +28,11 @@ public enum BinaryOperator {
             }
             return ValueType.booleanType();
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.GT);
+        }
     },
     LESS_THAN("<") {
         @Override
@@ -30,6 +41,11 @@ public enum BinaryOperator {
                 return null;
             }
             return ValueType.booleanType();
+        }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.LT);
         }
     },
     ADD("+") {
@@ -43,6 +59,11 @@ public enum BinaryOperator {
             }
             return left;
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.ADD);
+        }
     },
     SUBTRACT("-") {
         @Override
@@ -51,6 +72,11 @@ public enum BinaryOperator {
                 return null;
             }
             return left;
+        }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.SUB);
         }
     },
     MULTIPLY("*") {
@@ -61,6 +87,11 @@ public enum BinaryOperator {
             }
             return left;
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.MULT);
+        }
     },
     DIVIDE("/") {
         @Override
@@ -69,6 +100,11 @@ public enum BinaryOperator {
                 return null;
             }
             return left;
+        }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.DIVISION);
         }
     },
     MODULO("%") {
@@ -79,6 +115,11 @@ public enum BinaryOperator {
             }
             return left;
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.INTS_MODULUS);
+        }
     },
     AND("AND") {
         @Override
@@ -87,6 +128,11 @@ public enum BinaryOperator {
                 return null;
             }
             return ValueType.booleanType();
+        }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.AND);
         }
     },
     XOR("XOR") {
@@ -97,6 +143,11 @@ public enum BinaryOperator {
             }
             return ValueType.booleanType();
         }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.XOR);
+        }
     },
     OR("OR") {
         @Override
@@ -105,6 +156,11 @@ public enum BinaryOperator {
                 return null;
             }
             return ValueType.booleanType();
+        }
+
+        @Override
+        public Op convert(TermManager manager) {
+            return manager.mkOp(Kind.OR);
         }
     };
 
@@ -122,6 +178,8 @@ public enum BinaryOperator {
      * @return the type of an expression with this operator, or {@code null} if the expression isn't valid.
      */
     public abstract ValueType getType(ValueType left, ValueType right);
+
+    public abstract Op convert(TermManager manager);
 
     @Override
     public String toString() {

@@ -2,11 +2,18 @@ package com.bossymr.flow.state;
 
 import com.bossymr.flow.Flow;
 import com.bossymr.flow.constraint.Constraint;
-import com.bossymr.flow.constraint.ConstraintEngine;
+import com.bossymr.flow.constraint.Reachable;
 import com.bossymr.flow.expression.Expression;
+import com.bossymr.flow.expression.UnaryExpression;
 import com.bossymr.flow.instruction.Instruction;
+import com.bossymr.flow.instruction.UnaryOperator;
+import io.github.cvc5.Result;
+import io.github.cvc5.Solver;
 
 import java.util.*;
+
+import static com.bossymr.flow.constraint.Reachable.REACHABLE;
+import static com.bossymr.flow.constraint.Reachable.UNKNOWN;
 
 /**
  * A snapshot of the program at a specific instruction.
@@ -42,7 +49,6 @@ public class FlowSnapshot {
         this.predecessor = predecessor;
         this.stack.addAll(predecessor.stack);
         this.variables.putAll(predecessor.variables);
-        this.constraints.addAll(predecessor.constraints);
     }
 
     /**
@@ -125,10 +131,41 @@ public class FlowSnapshot {
     }
 
     /**
+     * {@return all predecessors up until this snapshot}
+     */
+    public List<FlowSnapshot> getPredecessors() {
+        List<FlowSnapshot> snapshots = new ArrayList<>();
+        FlowSnapshot snapshot = this;
+        while (snapshot != null) {
+            snapshots.add(snapshot);
+            snapshot = snapshot.getPredecessor();
+        }
+        return snapshots.reversed();
+    }
+
+    /**
+     * Returns the last common predecessor of this snapshot and the provided snapshot. Trying to get the common
+     * predecessor of this snapshot and {@code null} returns all predecessors.
+     *
+     * @param snapshot the snapshot
+     * @return the last common predecessor, or {@code null} if a common predecessor was not found
+     */
+    public FlowSnapshot commonPredecessor(FlowSnapshot snapshot) {
+        List<FlowSnapshot> predecessors = getPredecessors();
+        while (snapshot != null) {
+            snapshot = snapshot.getPredecessor();
+            if (predecessors.contains(predecessor)) {
+                return predecessor;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the weak predecessor of this snapshot.
      * <p>
-     * The weak predecessor of a snapshot is a snapshot that this snapshot is based on, but does not succeed. This
-     * is used to identify the exit state of another method, which this snapshot's predecessor called.
+     * The weak predecessor of a snapshot is a snapshot that this snapshot is based on, but does not succeed. This is
+     * used to identify the exit state of another method, which this snapshot's predecessor called.
      *
      * @return the weak predecessor of this snapshot.
      */
@@ -154,10 +191,26 @@ public class FlowSnapshot {
      * {@return if this snapshot is reachable}
      */
     public boolean isReachable() {
-        return switch (ConstraintEngine.isReachable(this)) {
+        return switch (getReachability()) {
             case REACHABLE, UNKNOWN -> true;
             case NOT_REACHABLE -> false;
         };
+    }
+
+    /**
+     * {@return if this snapshot is reachable}
+     */
+    public Reachable getReachability() {
+        Solver solver = flow.getSolver().getSolver(this);
+        flow.getStatistics().get(Flow.Statistic.SatisfiabilityQueries).increment();
+        Result result = solver.checkSat();
+        if (result.isSat()) {
+            return Reachable.REACHABLE;
+        }
+        if (result.isUnsat()) {
+            return Reachable.NOT_REACHABLE;
+        }
+        return Reachable.UNKNOWN;
     }
 
     /**
@@ -167,7 +220,28 @@ public class FlowSnapshot {
      * @return the result of the provided expression.
      */
     public Constraint compute(Expression expression) {
-        return ConstraintEngine.getConstraint(this, expression);
+        FlowSnapshot trueSnapshot = disconnectedState();
+        trueSnapshot.require(expression);
+        Reachable trueReachability = trueSnapshot.getReachability();
+        if (trueReachability == UNKNOWN) {
+            return Constraint.UNKNOWN;
+        }
+        FlowSnapshot falseSnapshot = disconnectedState();
+        falseSnapshot.require(new UnaryExpression(new UnaryOperator.Not(), expression));
+        Reachable falseReachability = falseSnapshot.getReachability();
+        if (falseReachability == UNKNOWN) {
+            return Constraint.UNKNOWN;
+        }
+        if (trueReachability == REACHABLE && falseReachability == REACHABLE) {
+            return Constraint.ANY_VALUE;
+        }
+        if (trueReachability == REACHABLE) {
+            return Constraint.ALWAYS_TRUE;
+        }
+        if (falseReachability == REACHABLE) {
+            return Constraint.ALWAYS_FALSE;
+        }
+        return Constraint.NO_VALUE;
     }
 
     /**

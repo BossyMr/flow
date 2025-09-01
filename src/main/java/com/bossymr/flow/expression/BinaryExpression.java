@@ -2,6 +2,9 @@ package com.bossymr.flow.expression;
 
 import com.bossymr.flow.instruction.BinaryOperator;
 import com.bossymr.flow.type.ValueType;
+import io.github.cvc5.Op;
+import io.github.cvc5.Term;
+import io.github.cvc5.TermManager;
 
 import java.util.function.Function;
 
@@ -14,6 +17,8 @@ public final class BinaryExpression implements Expression {
     private final ValueType type;
     private final Expression left;
     private final Expression right;
+
+    private Term term;
 
     /**
      * Create a new {@code BinaryExpression}.
@@ -78,6 +83,17 @@ public final class BinaryExpression implements Expression {
      */
     public Expression getRight() {
         return right;
+    }
+
+    @Override
+    public Term convert(TermManager manager) {
+        if (term != null) {
+            return term;
+        }
+        Term left = getLeft().convert(manager);
+        Term right = getRight().convert(manager);
+        Op operator = getOperator().convert(manager);
+        return term = manager.mkTerm(operator, left, right);
     }
 
     @Override

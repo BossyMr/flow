@@ -7,6 +7,6 @@ public final class Label implements PseudoInstruction {
 
     @Override
     public String toString() {
-        return "label";
+        return "label(" + hashCode() + ")";
     }
 }

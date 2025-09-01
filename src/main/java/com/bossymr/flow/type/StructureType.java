@@ -1,5 +1,7 @@
 package com.bossymr.flow.type;
 
+import io.github.cvc5.*;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -11,6 +13,8 @@ public final class StructureType implements ValueType {
 
     private final String name;
     private final List<Field> fields;
+
+    private Sort sort;
 
     /**
      * Create a new {@code StructureType}.
@@ -49,6 +53,23 @@ public final class StructureType implements ValueType {
     @Override
     public boolean isArray() {
         return false;
+    }
+
+    @Override
+    public Sort getSort(TermManager manager) {
+        if (sort != null) {
+            return sort;
+        }
+        DatatypeDecl dataType = manager.mkDatatypeDecl(name);
+        DatatypeConstructorDecl constructor = manager.mkDatatypeConstructorDecl(name);
+        for (StructureType.Field field : fields) {
+            constructor.addSelector(field.getName(), field.getType().getSort(manager));
+        }
+        try {
+            return sort = manager.mkDatatypeSort(dataType);
+        } catch (CVC5ApiException e) {
+            throw new IllegalStateException("could not convert type '" + this + "'", e);
+        }
     }
 
     @Override

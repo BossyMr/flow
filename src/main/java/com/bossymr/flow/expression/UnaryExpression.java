@@ -1,7 +1,10 @@
 package com.bossymr.flow.expression;
 
 import com.bossymr.flow.instruction.UnaryOperator;
-import com.bossymr.flow.type.*;
+import com.bossymr.flow.type.ValueType;
+import io.github.cvc5.Op;
+import io.github.cvc5.Term;
+import io.github.cvc5.TermManager;
 
 import java.util.function.Function;
 
@@ -13,6 +16,8 @@ public final class UnaryExpression implements Expression {
     private final UnaryOperator operator;
     private final ValueType type;
     private final Expression expression;
+
+    private Term term;
 
     /**
      * Create a new {@code UnaryExpression}.
@@ -64,6 +69,16 @@ public final class UnaryExpression implements Expression {
      */
     public Expression getExpression() {
         return expression;
+    }
+
+    @Override
+    public Term convert(TermManager manager) {
+        if (term != null) {
+            return term;
+        }
+        Term expression = getExpression().convert(manager);
+        Op operator = getOperator().convert(manager);
+        return term = manager.mkTerm(operator, expression);
     }
 
     @Override

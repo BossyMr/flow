@@ -10,6 +10,7 @@ class GraphTest {
     void functionCall() {
         Flow flow = new Flow();
         Flow.Method abs = flow.createMethod("abs", new Signature(ValueType.integerType(), ValueType.integerType()), codeBuilder -> codeBuilder
+                .load(0)
                 .duplicate()
                 .pushInteger(0)
                 .greaterThan()
