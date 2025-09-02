@@ -4,10 +4,12 @@ import com.bossymr.flow.Flow;
 import com.bossymr.flow.expression.BinaryExpression;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.state.FlowSnapshot;
-import com.bossymr.flow.type.EmptyType;
 import com.bossymr.flow.type.ValueType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Calls a method specified by the current method at the index specified by the next integer. Depending on the method,
@@ -26,7 +28,7 @@ public final class CallInstruction implements Instruction {
 
     @Override
     public List<FlowSnapshot> call(Flow.Method method, FlowSnapshot snapshot, Instruction successor) {
-        if (this.method.getSignature().returnType() instanceof EmptyType) {
+        if (this.method.getSignature().returnType() == ValueType.emptyType()) {
             // This method is as far as we are considered 'pure'. We don't keep track of modifications to external
             // fields, so unless the memory returns a variable, it can't modify the program's state.
             FlowSnapshot successorState = snapshot.successorState(successor);

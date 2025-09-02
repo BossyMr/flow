@@ -6,7 +6,7 @@ import io.github.cvc5.TermManager;
 import java.util.Objects;
 
 /**
- * An {@code ArrayType} represents an array of a specific type.
+ * An array of a specific type.
  */
 public final class ArrayType implements ValueType {
 
@@ -29,12 +29,7 @@ public final class ArrayType implements ValueType {
     public ValueType getElementType() {
         return elementType;
     }
-
-    @Override
-    public boolean isStructure() {
-        return false;
-    }
-
+    
     @Override
     public boolean isArray() {
         return true;
@@ -42,11 +37,11 @@ public final class ArrayType implements ValueType {
 
     @Override
     public Sort getSort(TermManager manager) {
-        if (sort != null) {
-            return sort;
+        if (sort == null) {
+            Sort integerSort = ValueType.integerType().getSort(manager);
+            sort = manager.mkArraySort(integerSort, elementType.getSort(manager));
         }
-        Sort integerSort = ValueType.integerType().getSort(manager);
-        return sort = manager.mkArraySort(integerSort, elementType.getSort(manager));
+        return sort;
     }
 
     @Override

@@ -1,48 +1,44 @@
 package com.bossymr.flow.type;
 
-import io.github.cvc5.*;
+import io.github.cvc5.Sort;
+import io.github.cvc5.TermManager;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * A {@code StructureType} represents a structure with fields.
+ * A a structure with a set of values.
  */
 public final class StructureType implements ValueType {
 
-    private final String name;
-    private final List<Field> fields;
+    private final List<ValueType> values;
 
     private Sort sort;
 
     /**
      * Create a new {@code StructureType}.
      *
-     * @param name the name of the structure.
-     * @param fields the fields of this structure.
+     * @param values the values in this structure.
      */
-    public StructureType(String name, List<Field> fields) {
-        this.name = name;
-        this.fields = fields;
+    public StructureType(List<ValueType> values) {
+        this.values = values;
     }
 
     /**
-     * Returns the name of this structure.
+     * Create a new {@code StructureType}.
      *
-     * @return the name of this structure.
+     * @param values the values in this structure.
      */
-    public String getName() {
-        return name;
+    public StructureType(ValueType... values) {
+        this(List.of(values));
     }
 
     /**
-     * Returns the fields of this structure.
-     *
-     * @return the fields of this structure.
+     * {@return the values in this structure}
      */
-    public List<Field> getFields() {
-        return fields;
+    public List<ValueType> getValues() {
+        return values;
     }
 
     @Override
@@ -51,97 +47,31 @@ public final class StructureType implements ValueType {
     }
 
     @Override
-    public boolean isArray() {
-        return false;
-    }
-
-    @Override
     public Sort getSort(TermManager manager) {
-        if (sort != null) {
-            return sort;
+        if (sort == null) {
+            Sort[] sorts = values.stream()
+                    .map(value -> value.getSort(manager))
+                    .toArray(Sort[]::new);
+            sort = manager.mkTupleSort(sorts);
         }
-        DatatypeDecl dataType = manager.mkDatatypeDecl(name);
-        DatatypeConstructorDecl constructor = manager.mkDatatypeConstructorDecl(name);
-        for (StructureType.Field field : fields) {
-            constructor.addSelector(field.getName(), field.getType().getSort(manager));
-        }
-        try {
-            return sort = manager.mkDatatypeSort(dataType);
-        } catch (CVC5ApiException e) {
-            throw new IllegalStateException("could not convert type '" + this + "'", e);
-        }
+        return sort;
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         StructureType that = (StructureType) o;
-        return Objects.equals(fields, that.fields);
+        return Objects.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(fields);
+        return Objects.hashCode(values);
     }
 
     @Override public String toString() {
-        return "structure{" + name + ", " + fields.stream()
-                .map(Field::toString)
-                .collect(Collectors.joining(", ")) + "}";
-    }
-
-    /**
-     * A {@code Field} represents the field of a structure.
-     */
-    public static class Field {
-
-        private final String name;
-        private final ValueType type;
-
-        /**
-         * Create a new {@code Field}.
-         *
-         * @param name the name of the field.
-         * @param type the type of the field.
-         */
-        public Field(String name, ValueType type) {
-            this.name = name;
-            this.type = type;
-        }
-
-        /**
-         * Returns the name of the field.
-         *
-         * @return the name of the field.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Returns the type of the field.
-         *
-         * @return the type of the field.
-         */
-        public ValueType getType() {
-            return type;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == null || getClass() != o.getClass()) return false;
-            Field field = (Field) o;
-            return Objects.equals(name, field.name) && Objects.equals(type, field.type);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, type);
-        }
-
-        @Override
-        public String toString() {
-            return name + ": " + type;
-        }
+        return "structure" + values.stream()
+                .map(ValueType::toString)
+                .collect(Collectors.joining(", ", "{", "}"));
     }
 }

@@ -47,7 +47,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression numericLiteral(long value) {
-        return new LiteralExpression(new Constant.Numeric(value));
+        return new LiteralExpression(new Constant.Real(value));
     }
 
     /**
@@ -58,7 +58,7 @@ public final class LiteralExpression implements Expression {
      * @return a new {@code LiteralExpression}.
      */
     public static LiteralExpression numericLiteral(long numerator, long denominator) {
-        return new LiteralExpression(new Constant.Numeric(numerator, denominator));
+        return new LiteralExpression(new Constant.Real(numerator, denominator));
     }
 
     /**

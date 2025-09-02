@@ -7,13 +7,13 @@ import org.junit.jupiter.api.Test;
 
 class LoopTest {
 
-    @DisplayName("Increment a counter by 1 for 50 iterations")
+    @DisplayName("Increment a counter by 1 for 100 iterations")
     @Test
     void finiteForLoop() {
         Flow flow = new Flow();
         int iterator = 0;
         int counter = 1;
-        int iterations = 50;
+        int iterations = 100;
         flow.createMethod("foo", new Signature(ValueType.emptyType()), codeBuilder -> codeBuilder
                 .pushInteger(0)
                 .store(iterator)

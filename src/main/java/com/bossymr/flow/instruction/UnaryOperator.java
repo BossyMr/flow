@@ -1,6 +1,6 @@
 package com.bossymr.flow.instruction;
 
-import com.bossymr.flow.type.*;
+import com.bossymr.flow.type.ValueType;
 import io.github.cvc5.Kind;
 import io.github.cvc5.Op;
 import io.github.cvc5.TermManager;
@@ -26,7 +26,7 @@ public interface UnaryOperator {
     final class Not implements UnaryOperator {
         @Override
         public ValueType getType(ValueType type) {
-            if (!(type instanceof BooleanType)) {
+            if (type != ValueType.booleanType()) {
                 return null;
             }
             return type;
@@ -49,7 +49,7 @@ public interface UnaryOperator {
     final class Negate implements UnaryOperator {
         @Override
         public ValueType getType(ValueType type) {
-            if (!(type instanceof NumericType)) {
+            if (!(type == ValueType.realType() || type == ValueType.integerType())) {
                 return null;
             }
             return type;
@@ -81,7 +81,7 @@ public interface UnaryOperator {
          * @param toType the type to convert to
          */
         public Convert(ValueType fromType, ValueType toType) {
-            if (!(fromType instanceof NumericType) || !(toType instanceof NumericType)) {
+            if (!(fromType == ValueType.integerType() || fromType == ValueType.realType()) || !(toType == ValueType.integerType() || toType == ValueType.realType())) {
                 throw new IllegalArgumentException("convert " + fromType + " -> " + toType);
             }
             this.fromType = fromType;
@@ -112,10 +112,10 @@ public interface UnaryOperator {
 
         @Override
         public Op convert(TermManager manager) {
-            if (getToType() instanceof RealType) {
+            if (getToType() == ValueType.realType()) {
                 return manager.mkOp(Kind.TO_REAL);
             }
-            if (getToType() instanceof IntegerType) {
+            if (getToType() == ValueType.integerType()) {
                 return manager.mkOp(Kind.TO_INTEGER);
             }
             throw new IllegalStateException("convert " + getFromType() + " -> " + toType);

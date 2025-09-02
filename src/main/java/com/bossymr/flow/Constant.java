@@ -1,6 +1,5 @@
 package com.bossymr.flow;
 
-import com.bossymr.flow.type.RealType;
 import com.bossymr.flow.type.ValueType;
 import io.github.cvc5.Term;
 import io.github.cvc5.TermManager;
@@ -91,23 +90,23 @@ public sealed interface Constant<T> {
         }
     }
 
-    final class Numeric implements Constant<RealType.Fraction> {
+    final class Real implements Constant<Real.Fraction> {
 
-        private final RealType.Fraction value;
+        private final Fraction value;
 
-        public Numeric(RealType.Fraction value) {
+        public Real(Fraction value) {
             this.value = value;
         }
 
-        public Numeric(long value) {
-            this.value = new RealType.Fraction(value, 1);
+        public Real(long value) {
+            this.value = new Fraction(value, 1);
         }
 
-        public Numeric(long numerator, long denominator) {
-            this.value = new RealType.Fraction(numerator, denominator);
+        public Real(long numerator, long denominator) {
+            this.value = new Fraction(numerator, denominator);
         }
 
-        public RealType.Fraction getValue() {
+        public Fraction getValue() {
             return value;
         }
 
@@ -124,8 +123,8 @@ public sealed interface Constant<T> {
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
-            Numeric numeric = (Numeric) o;
-            return Objects.equals(value, numeric.value);
+            Real real = (Real) o;
+            return Objects.equals(value, real.value);
         }
 
         @Override
@@ -136,6 +135,15 @@ public sealed interface Constant<T> {
         @Override
         public java.lang.String toString() {
             return java.lang.String.valueOf(value);
+        }
+
+        /**
+         * A {@code Fraction} represents a real number.
+         *
+         * @param numerator the numerator.
+         * @param denominator the denominator.
+         */
+        public record Fraction(long numerator, long denominator) {
         }
     }
 

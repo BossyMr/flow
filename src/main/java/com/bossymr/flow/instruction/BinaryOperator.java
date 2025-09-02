@@ -1,6 +1,6 @@
 package com.bossymr.flow.instruction;
 
-import com.bossymr.flow.type.*;
+import com.bossymr.flow.type.ValueType;
 import io.github.cvc5.Kind;
 import io.github.cvc5.Op;
 import io.github.cvc5.TermManager;
@@ -23,7 +23,7 @@ public enum BinaryOperator {
     GREATER_THAN(">") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return ValueType.booleanType();
@@ -37,7 +37,7 @@ public enum BinaryOperator {
     LESS_THAN("<") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return ValueType.booleanType();
@@ -51,10 +51,10 @@ public enum BinaryOperator {
     ADD("+") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (left instanceof StringType && right instanceof StringType) {
+            if (left == ValueType.stringType() && right == ValueType.stringType()) {
                 return left;
             }
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return left;
@@ -68,7 +68,7 @@ public enum BinaryOperator {
     SUBTRACT("-") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return left;
@@ -82,7 +82,7 @@ public enum BinaryOperator {
     MULTIPLY("*") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return left;
@@ -96,7 +96,7 @@ public enum BinaryOperator {
     DIVIDE("/") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof NumericType) || !left.equals(right)) {
+            if (!(left == ValueType.realType() || left == ValueType.integerType()) || left != right) {
                 return null;
             }
             return left;
@@ -110,7 +110,7 @@ public enum BinaryOperator {
     MODULO("%") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof IntegerType) || !(right instanceof IntegerType)) {
+            if (left != ValueType.integerType() || right != ValueType.integerType()) {
                 return null;
             }
             return left;
@@ -124,7 +124,7 @@ public enum BinaryOperator {
     AND("AND") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
+            if (left != ValueType.booleanType() || right != ValueType.booleanType()) {
                 return null;
             }
             return ValueType.booleanType();
@@ -138,7 +138,7 @@ public enum BinaryOperator {
     XOR("XOR") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
+            if (left != ValueType.booleanType() || right != ValueType.booleanType()) {
                 return null;
             }
             return ValueType.booleanType();
@@ -152,7 +152,7 @@ public enum BinaryOperator {
     OR("OR") {
         @Override
         public ValueType getType(ValueType left, ValueType right) {
-            if (!(left instanceof BooleanType) || !(right instanceof BooleanType)) {
+            if (left != ValueType.booleanType() || right != ValueType.booleanType()) {
                 return null;
             }
             return ValueType.booleanType();

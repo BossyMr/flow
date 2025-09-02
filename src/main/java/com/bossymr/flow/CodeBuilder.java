@@ -2,7 +2,6 @@ package com.bossymr.flow;
 
 import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.instruction.*;
-import com.bossymr.flow.type.EmptyType;
 import com.bossymr.flow.type.ValueType;
 
 import java.util.*;
@@ -387,7 +386,7 @@ public class CodeBuilder {
     }
 
     public void returnValue() {
-        if (!(method.getSignature().returnType() instanceof EmptyType)) {
+        if (method.getSignature().returnType() != ValueType.emptyType()) {
             validateStackLength(1);
             stack.removeLast();
         }
@@ -413,7 +412,7 @@ public class CodeBuilder {
             }
             if (expected.equals(actual)) {
                 actual.clear();
-                if (!(instruction.returnType() instanceof EmptyType)) {
+                if (instruction.returnType() != ValueType.emptyType()) {
                     stack.add(instruction.returnType());
                 }
                 return instruction;

@@ -6,7 +6,7 @@ import io.github.cvc5.TermManager;
 /**
  * A {@code ValueType} represents the type of an expression or value.
  */
-public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, NumericType, StringType, StructureType {
+public sealed interface ValueType permits ArrayType, PrimitiveType, StructureType {
 
     /**
      * Returns an empty type.
@@ -14,7 +14,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return an empty type.
      */
     static ValueType emptyType() {
-        return new EmptyType();
+        return PrimitiveType.EMPTY;
     }
 
     /**
@@ -23,7 +23,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return a boolean type.
      */
     static ValueType booleanType() {
-        return new BooleanType();
+        return PrimitiveType.BOOLEAN;
     }
 
     /**
@@ -32,7 +32,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return a string type.
      */
     static ValueType stringType() {
-        return new StringType();
+        return PrimitiveType.STRING;
     }
 
     /**
@@ -41,7 +41,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return a numeric type.
      */
     static ValueType realType() {
-        return new RealType();
+        return PrimitiveType.REAL;
     }
 
     /**
@@ -50,7 +50,7 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return an integer type.
      */
     static ValueType integerType() {
-        return new IntegerType();
+        return PrimitiveType.INTEGER;
     }
 
     /**
@@ -58,14 +58,18 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      *
      * @return whether this type represents a structure.
      */
-    boolean isStructure();
+    default boolean isStructure() {
+        return false;
+    }
 
     /**
      * Checks whether this type represents an array.
      *
      * @return whether this type represents an array.
      */
-    boolean isArray();
+    default boolean isArray() {
+        return false;
+    }
 
     /**
      * Checks whether this type represents an empty type.
@@ -73,13 +77,13 @@ public sealed interface ValueType permits ArrayType, BooleanType, EmptyType, Num
      * @return whether this type represents an empty type.
      */
     default boolean isEmpty() {
-        return this instanceof EmptyType;
+        return false;
     }
 
     /**
      * Create a type representing an array of this type.
      *
-     * @return a type representing an array of type.
+     * @return a type representing an array of a type.
      */
     default ArrayType createArrayType() {
         return new ArrayType(this);
