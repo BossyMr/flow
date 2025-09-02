@@ -213,8 +213,7 @@ public class Flow {
          * @return a list of all possible snapshots
          */
         public List<FlowSnapshot> beforeInstruction(Instruction instruction) {
-            Deque<FlowSnapshot> queue = new ArrayDeque<>();
-            queue.add(entryPoint);
+            Deque<FlowSnapshot> queue = new ArrayDeque<>(exitPoints);
             List<FlowSnapshot> states = new ArrayList<>();
             while (!queue.isEmpty()) {
                 // Search all snapshots for snapshots belonging to the specified instruction.
@@ -222,10 +221,15 @@ public class Flow {
                 // We need to search until we reach the end of the method, since an instruction might be encountered
                 // than once.
                 FlowSnapshot snapshot = queue.pop();
+                FlowSnapshot predecessor = snapshot.getPredecessor();
                 if (instruction.equals(snapshot.getInstruction())) {
-                    states.add(snapshot.getPredecessor());
+                    // The predecessor cannot be null, because the first instruction always has a predecessor that
+                    // doesn't belong to any instruction.
+                    states.add(predecessor);
                 }
-                queue.addAll(snapshot.getSuccessors());
+                if (predecessor != null) {
+                    queue.add(predecessor);
+                }
             }
             return states;
         }
@@ -237,20 +241,21 @@ public class Flow {
          * @return a list of all possible snapshots
          */
         public List<FlowSnapshot> afterInstruction(Instruction instruction) {
-            Deque<FlowSnapshot> queue = new ArrayDeque<>();
-            queue.add(entryPoint);
+            Deque<FlowSnapshot> queue = new ArrayDeque<>(exitPoints);
             List<FlowSnapshot> states = new ArrayList<>();
             while (!queue.isEmpty()) {
                 // Search all snapshots for snapshots where it's predecessor belongs to the specified instruction, but not
                 // the instruction itself.
                 FlowSnapshot snapshot = queue.pop();
-                if (!instruction.equals(snapshot.getInstruction())) {
-                    FlowSnapshot predecessor = snapshot.getPredecessor();
-                    if (predecessor != null && instruction.equals(predecessor.getInstruction())) {
-                        states.add(snapshot);
+                FlowSnapshot predecessor = snapshot.getPredecessor();
+                if (predecessor != null) {
+                    if (!instruction.equals(snapshot.getInstruction())) {
+                        if (instruction.equals(predecessor.getInstruction())) {
+                            states.add(snapshot);
+                        }
                     }
+                    queue.add(predecessor);
                 }
-                queue.addAll(snapshot.getSuccessors());
             }
             return states;
         }

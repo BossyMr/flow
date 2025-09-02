@@ -24,7 +24,6 @@ public class FlowSnapshot {
 
     private final FlowSnapshot predecessor;
     private final FlowSnapshot weakPredecessor;
-    private final Set<FlowSnapshot> successors = new HashSet<>();
     private final Instruction instruction;
 
     private final Set<Expression> constraints = new HashSet<>();
@@ -67,9 +66,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState() {
-        FlowSnapshot successor = new FlowSnapshot(this.flow, this, null, this.instruction);
-        getSuccessors().add(successor);
-        return successor;
+        return new FlowSnapshot(this.flow, this, null, this.instruction);
     }
 
     /**
@@ -79,9 +76,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState(FlowSnapshot snapshot) {
-        FlowSnapshot successor = new FlowSnapshot(this.flow, this, snapshot, this.instruction);
-        getSuccessors().add(successor);
-        return successor;
+        return new FlowSnapshot(this.flow, this, snapshot, this.instruction);
     }
 
     /**
@@ -91,9 +86,7 @@ public class FlowSnapshot {
      * @return a new snapshot.
      */
     public FlowSnapshot successorState(Instruction instruction) {
-        FlowSnapshot successor = new FlowSnapshot(this.flow, this, null, instruction);
-        getSuccessors().add(successor);
-        return successor;
+        return new FlowSnapshot(this.flow, this, null, instruction);
     }
 
     /**
@@ -114,13 +107,6 @@ public class FlowSnapshot {
      */
     public Instruction getInstruction() {
         return instruction;
-    }
-
-    /**
-     * {@return the successors of this snapshot}
-     */
-    public Set<FlowSnapshot> getSuccessors() {
-        return successors;
     }
 
     /**
@@ -153,10 +139,10 @@ public class FlowSnapshot {
     public FlowSnapshot commonPredecessor(FlowSnapshot snapshot) {
         List<FlowSnapshot> predecessors = getPredecessors();
         while (snapshot != null) {
-            snapshot = snapshot.getPredecessor();
-            if (predecessors.contains(predecessor)) {
-                return predecessor;
+            if (predecessors.contains(snapshot)) {
+                return snapshot;
             }
+            snapshot = snapshot.getPredecessor();
         }
         return null;
     }

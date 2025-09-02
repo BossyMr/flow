@@ -1,7 +1,6 @@
 package com.bossymr.flow.instruction;
 
 import com.bossymr.flow.Flow;
-import com.bossymr.flow.constraint.Constraint;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.expression.UnaryExpression;
 import com.bossymr.flow.state.FlowSnapshot;
@@ -33,20 +32,27 @@ public final class BranchInstruction implements Instruction {
                 yield List.of(successorState);
             }
             case CONDITIONALLY -> {
+                // Before:
+                // {SatisfiabilityQueries=106, SatisfiabilityAssertions=1483, SatisfiabilityPush=1483, SatisfiabilityPop=1431, Snapshots=1080}
+                // After:
+                // {SatisfiabilityQueries=106, SatisfiabilityAssertions=1483, SatisfiabilityPush=1483, SatisfiabilityPop=1431, Snapshots=978}
+                // After fixing common predecessor:
+                // {SatisfiabilityQueries=106, SatisfiabilityAssertions=157, SatisfiabilityPush=157, SatisfiabilityPop=105, Snapshots=1080}
+                // After fixing branch instruction:
+                // {SatisfiabilityQueries=106, SatisfiabilityAssertions=107, SatisfiabilityPush=107, SatisfiabilityPop=55, Snapshots=978}
                 Expression condition = snapshot.pop();
-                Constraint constraint = snapshot.compute(condition);
                 List<FlowSnapshot> successors = new ArrayList<>();
-                if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_TRUE) {
-                    FlowSnapshot successorState = snapshot.successorState();
-                    successorState.require(condition);
-                    successors.add(successorState.successorState(instruction));
+                FlowSnapshot falseSnapshot = snapshot.successorState(successor);
+                falseSnapshot.require(new UnaryExpression(new UnaryOperator.Not(), condition));
+                if (falseSnapshot.isReachable()) {
+                    successors.add(falseSnapshot);
                 }
-                if (constraint == Constraint.ANY_VALUE || constraint == Constraint.UNKNOWN || constraint == Constraint.ALWAYS_FALSE) {
-                    FlowSnapshot successorState = snapshot.successorState();
-                    successorState.require(new UnaryExpression(new UnaryOperator.Not(), condition));
-                    successors.add(successorState.successorState(successor));
+                FlowSnapshot trueSnapshot = snapshot.successorState(instruction);
+                trueSnapshot.require(condition);
+                if (trueSnapshot.isReachable()) {
+                    successors.add(trueSnapshot);
                 }
-                yield List.copyOf(successors);
+                yield List.copyOf(successors.reversed());
             }
         };
     }
