@@ -214,6 +214,18 @@ public class CodeBuilder {
     }
 
     /**
+     * Pops the value at the top of the stack.
+     *
+     * @return this builder
+     */
+    public CodeBuilder pop() {
+        validateStackLength(1);
+        stack.removeLast();
+        instructions.add(new PopInstruction());
+        return this;
+    }
+
+    /**
      * Adds a push instruction to this code block.
      *
      * @param constant the constant
