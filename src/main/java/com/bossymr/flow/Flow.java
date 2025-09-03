@@ -4,6 +4,7 @@ import com.bossymr.flow.constraint.FlowSolver;
 import com.bossymr.flow.expression.AnyExpression;
 import com.bossymr.flow.expression.Expression;
 import com.bossymr.flow.instruction.Instruction;
+import com.bossymr.flow.instruction.ReturnInstruction;
 import com.bossymr.flow.state.FlowSnapshot;
 import com.bossymr.flow.type.ValueType;
 
@@ -102,6 +103,14 @@ public class Flow {
             this.instructions = new ArrayList<>();
             CodeBuilder codeBuilder = new CodeBuilder(this);
             code.accept(codeBuilder);
+            Instruction lastInstruction = instructions.getLast();
+            if (!(lastInstruction instanceof ReturnInstruction)) {
+                if (signature.returnType() == ValueType.emptyType()) {
+                    instructions.add(new ReturnInstruction());
+                } else {
+                    throw new IllegalStateException("method '" + this + "' must return a value");
+                }
+            }
             // We need the entry point to be before the first instruction in the method.
             // This is so that we can call #beforeInstruction(...) on the first instruction.
             this.entryPoint = FlowSnapshot.emptyState(Flow.this);
@@ -202,8 +211,31 @@ public class Flow {
          * @return a list of all possible snapshots
          */
         public List<FlowSnapshot> getExitPoints(FlowSnapshot caller) {
-            // TODO
-            throw new UnsupportedOperationException();
+            if (signature.returnType() == ValueType.emptyType()) {
+                return List.of(caller);
+            }
+            List<FlowSnapshot> states = new ArrayList<>();
+            // Iterate over all possible exit points of this method.
+            for (FlowSnapshot exitPoint : exitPoints) {
+                // Create a copy of the memory state.
+                FlowSnapshot snapshot = caller.successorState(exitPoint);
+                Map<Expression, Expression> values = new HashMap<>();
+                // For all arguments, pop the argument from the stack (in reverse order since the first argument is
+                // popped last).
+                for (Expression argument : arguments.reversed()) {
+                    Expression value = snapshot.pop();
+                    values.put(argument, value);
+                }
+                Expression returnValue = exitPoint.getStack().getLast().translate(child -> values.getOrDefault(child, child));
+                snapshot.push(returnValue);
+                // All constraints from the call site have been added to the disconnected state, as such, we can check
+                // if it is possible for this memory state to be returned given the arguments we pass to the method.
+                if (!snapshot.isReachable()) {
+                    continue;
+                }
+                states.add(snapshot);
+            }
+            return states;
         }
 
         /**

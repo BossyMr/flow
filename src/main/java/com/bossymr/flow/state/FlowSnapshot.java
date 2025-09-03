@@ -63,15 +63,6 @@ public class FlowSnapshot {
     /**
      * Create a successor to this snapshot representing the same instruction as this snapshot.
      *
-     * @return a new snapshot.
-     */
-    public FlowSnapshot successorState() {
-        return new FlowSnapshot(this.flow, this, null, this.instruction);
-    }
-
-    /**
-     * Create a successor to this snapshot representing the same instruction as this snapshot.
-     *
      * @param snapshot a disconnected predecessor to this snapshot.
      * @return a new snapshot.
      */
@@ -90,12 +81,12 @@ public class FlowSnapshot {
     }
 
     /**
-     * Creates a successor to this snapshot, which is not stored as a successor to this snapshot.
+     * Creates a successor to this snapshot.
      *
      * @return a new snapshot.
      */
-    public FlowSnapshot disconnectedState() {
-        return new FlowSnapshot(this.flow, this, null, null);
+    public FlowSnapshot successorState() {
+        return new FlowSnapshot(this.flow, this, null, instruction);
     }
 
     public Flow getFlow() {
@@ -206,13 +197,13 @@ public class FlowSnapshot {
      * @return the result of the provided expression.
      */
     public Constraint compute(Expression expression) {
-        FlowSnapshot trueSnapshot = disconnectedState();
+        FlowSnapshot trueSnapshot = successorState();
         trueSnapshot.require(expression);
         Reachable trueReachability = trueSnapshot.getReachability();
         if (trueReachability == UNKNOWN) {
             return Constraint.UNKNOWN;
         }
-        FlowSnapshot falseSnapshot = disconnectedState();
+        FlowSnapshot falseSnapshot = successorState();
         falseSnapshot.require(new UnaryExpression(new UnaryOperator.Not(), expression));
         Reachable falseReachability = falseSnapshot.getReachability();
         if (falseReachability == UNKNOWN) {

@@ -22,9 +22,6 @@ public class CodeBuilder {
 
     private final List<Instruction> instructions;
 
-    private final Label startLabel = new Label();
-    private final Label endLabel = new Label();
-
     public CodeBuilder(Flow.Method method) {
         this.method = method;
         this.stack = new ArrayList<>();
@@ -69,20 +66,6 @@ public class CodeBuilder {
     public CodeBuilder insertLabel(Label label) {
         instructions.add(label);
         return this;
-    }
-
-    /**
-     * {@return a label associated with the beginning of the current block}
-     */
-    public Label startLabel() {
-        return startLabel;
-    }
-
-    /**
-     * {@return a label associated with the end of the current block}
-     */
-    public Label endLabel() {
-        return endLabel;
     }
 
     /**
@@ -182,15 +165,20 @@ public class CodeBuilder {
      */
     public CodeBuilder ifThenElse(Consumer<CodeBuilder> thenHandler, Consumer<CodeBuilder> elseHandler) {
         Label thenLabel = newLabel();
-        Label afterLabel = newLabel();
+        Label afterLabel = null;
         conditionalJump(thenLabel);
         CodeBuilder elseCodeBuilder = new CodeBuilder(this);
         elseHandler.accept(elseCodeBuilder);
-        jump(afterLabel);
+        if (!(instructions.getLast() instanceof ReturnInstruction)) {
+            afterLabel = newLabel();
+            jump(afterLabel);
+        }
         insertLabel(thenLabel);
         CodeBuilder thenCodeBuilder = new CodeBuilder(this);
         thenHandler.accept(thenCodeBuilder);
-        insertLabel(afterLabel);
+        if (afterLabel != null) {
+            insertLabel(afterLabel);
+        }
         stack.clear();
         stack.addAll(thenCodeBuilder.getStack());
         return this;
